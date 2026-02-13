@@ -242,30 +242,6 @@ export default async function OfferPage({ params }: OfferPageProps) {
     ? `https://www.google.com/s2/favicons?domain=${brandHost}&sz=128`
     : "";
 
-  const reviewCards = testimonials.length > 0
-    ? testimonials.slice(0, 3).map((testimonial) => ({
-        author: testimonial.author,
-        text: testimonial.text,
-        rating: testimonial.rating ?? Math.max(3, Math.round(editorialScore / 2)),
-      }))
-    : [
-        {
-          author: "Traveler insight",
-          text: brandedPros[0] || `${brandName} is easy to compare and search for deals`,
-          rating: Math.max(3, Math.round(editorialScore / 2)),
-        },
-        {
-          author: "Frequent flyer",
-          text: brandedPros[1] || `${brandName} offers useful price alerts and deal tracking`,
-          rating: Math.max(3, Math.round(editorialScore / 2)),
-        },
-        {
-          author: "Budget trip planner",
-          text: brandedCons[0] || `${brandName} may redirect you to booking partners`,
-          rating: Math.max(3, Math.round(editorialScore / 2) - 1),
-        },
-      ];
-
   const currentDate = new Date().toLocaleDateString("en-US", { 
     year: "numeric", 
     month: "long", 
@@ -333,11 +309,16 @@ export default async function OfferPage({ params }: OfferPageProps) {
       </header>
 
       <div className="max-w-5xl mx-auto px-4 py-8">
+        {/* Affiliate Disclosure */}
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6 text-xs text-amber-800">
+          <strong>Disclosure:</strong> This page contains affiliate links. If you click through and make a purchase, we may earn a commission at no additional cost to you. Our opinions remain our own and are not influenced by advertisers. <a href="/about" className="underline">Learn more about how we review</a>.
+        </div>
+
         {/* Title & Meta */}
         <div className="mb-8">
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <span className="inline-flex items-center gap-2 rounded-full bg-indigo-100 text-indigo-700 px-3 py-1 text-xs font-semibold">
-              Editor’s Pick
+              Editorial Review
             </span>
             <span className="inline-flex items-center gap-2 rounded-full bg-amber-100 text-amber-700 px-3 py-1 text-xs font-semibold">
               Updated {currentDate}
@@ -378,7 +359,7 @@ export default async function OfferPage({ params }: OfferPageProps) {
               </div>
               <div className="grid sm:grid-cols-3 gap-4">
                 <div className="rounded-xl bg-[color:var(--brand-soft)] p-4">
-                  <div className="text-xs text-gray-500">Editorial score</div>
+                  <div className="text-xs text-gray-500">Our assessment</div>
                   <div className="text-2xl font-bold text-[color:var(--brand-primary)]">{editorialScore}/10</div>
                 </div>
                 <div className="rounded-xl bg-gray-50 p-4">
@@ -433,18 +414,9 @@ export default async function OfferPage({ params }: OfferPageProps) {
               className="px-6 py-3 text-white font-semibold rounded-lg transition"
               style={{ backgroundColor: brandPalette.primary }}
             >
-              Visit Site
+              Visit {brandName}
             </PopunderButton>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <span key={star} className={star <= Math.round(editorialScore / 2) ? "text-yellow-400" : "text-gray-300"}>
-                    ★
-                  </span>
-                ))}
-              </div>
-              <span className="text-sm text-gray-600">({editorialScore}/10)</span>
-            </div>
+            <span className="text-sm text-gray-500">Official website</span>
           </div>
         </div>
 
@@ -454,8 +426,8 @@ export default async function OfferPage({ params }: OfferPageProps) {
           
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <div>
-              <div className="text-sm font-semibold text-gray-700 mb-1">Editorial Score</div>
-              <div className="text-3xl font-bold" style={{ color: brandPalette.primary }}>{editorialScore}</div>
+              <div className="text-sm font-semibold text-gray-700 mb-1">Our Assessment</div>
+              <div className="text-3xl font-bold" style={{ color: brandPalette.primary }}>{editorialScore}/10</div>
             </div>
             <div>
               <div className="text-sm font-semibold text-gray-700 mb-1">Best For</div>
@@ -479,41 +451,39 @@ export default async function OfferPage({ params }: OfferPageProps) {
 
         {/* In a Nutshell */}
         <section className="bg-gradient-to-br from-white rounded-lg shadow-sm p-6 mb-8" style={{ backgroundColor: brandPalette.soft, borderColor: brandPalette.accent, borderWidth: 1 }}>
-          <h2 className="text-2xl font-bold mb-4" style={{ color: brandPalette.secondary }}>In a Nutshell: {brandName} {isTravel ? 'Flight Search' : ''}</h2>
-          <p className="text-gray-700 leading-relaxed">
-            {tagline} {benefits[0] && `With ${benefits[0].toLowerCase()}, `}
-            {brandName} is a strong option for {bestFor.toLowerCase()}. We took a closer look at 
-            {brandName} features, pricing, and user feedback to bring you this comprehensive review.
+          <h2 className="text-2xl font-bold mb-4" style={{ color: brandPalette.secondary }}>In a Nutshell: What Is {brandName}?</h2>
+          <p className="text-gray-700 leading-relaxed mb-4">
+            {tagline} {benefits[0] && `One of ${brandName}'s key strengths is that it ${benefits[0].toLowerCase()}. `}
+            Our editorial team spent time evaluating {brandName} based on its features, pricing transparency, user interface, and overall value proposition in the {category.toLowerCase()} space.
+          </p>
+          <p className="text-gray-700 leading-relaxed mb-4">
+            {brandName} positions itself as a solution for {bestFor.toLowerCase()}. In this review, we break down what {brandName} does well, where it falls short, and whether it may be the right fit for your needs based on publicly available information and our own hands-on assessment.
+          </p>
+          <p className="text-gray-600 leading-relaxed text-sm">
+            <em>Note: The information in this review is based on publicly available data and our editorial team&apos;s independent analysis. Individual results may vary. Please visit the official {brandName} website for the most up-to-date information.</em>
           </p>
         </section>
 
-        {/* User Reviews */}
+        {/* How We Review - Methodology */}
         <section className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <h2 className="text-2xl font-bold" style={{ color: brandPalette.secondary }}>{brandName} User Reviews</h2>
-            <div className="text-sm text-gray-500">Summary of common feedback themes</div>
-          </div>
+          <h2 className="text-2xl font-bold mb-4" style={{ color: brandPalette.secondary }}>How We Evaluated {brandName}</h2>
+          <p className="text-gray-700 leading-relaxed mb-4">
+            Our editorial team evaluates products and services based on several factors. We look at publicly available information including the official website, published pricing, feature documentation, and user feedback from reputable third-party review platforms. We do not fabricate reviews or testimonials.
+          </p>
           <div className="grid md:grid-cols-3 gap-4">
-            {reviewCards.map((review, index) => (
-              <div key={`${review.author}-${index}`} className="rounded-xl border border-gray-200 bg-gray-50 p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="flex">
-                    {[...Array(review.rating)].map((_, i) => (
-                      <span key={i} className="text-yellow-400">★</span>
-                    ))}
-                  </div>
-                  <span className="text-xs text-gray-500">{review.rating}/5</span>
-                </div>
-                <p className="text-sm text-gray-700 mb-3">{review.text}</p>
-                <div className="text-xs font-semibold text-gray-600">{review.author}</div>
-              </div>
-            ))}
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+              <div className="text-sm font-semibold text-gray-900 mb-2">Features & Functionality</div>
+              <p className="text-xs text-gray-600">We assess the core feature set, ease of use, and how well the product delivers on its promises.</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+              <div className="text-sm font-semibold text-gray-900 mb-2">Pricing & Value</div>
+              <p className="text-xs text-gray-600">We compare pricing against competitors and evaluate whether the features justify the cost.</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+              <div className="text-sm font-semibold text-gray-900 mb-2">User Experience</div>
+              <p className="text-xs text-gray-600">We consider the overall user experience, including setup, interface design, and customer support availability.</p>
+            </div>
           </div>
-          {testimonials.length === 0 && (
-            <p className="text-xs text-gray-500 mt-4">
-              Note: These summaries reflect common themes derived from available information and on-page signals.
-            </p>
-          )}
         </section>
 
         {/* Highlights */}
@@ -531,18 +501,6 @@ export default async function OfferPage({ params }: OfferPageProps) {
           </ul>
         </section>
 
-        {/* Popular Search Terms */}
-        <section className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
-          <h2 className="text-2xl font-bold mb-4" style={{ color: brandPalette.secondary }}>Popular {brandName} Search Terms</h2>
-          <ul className="grid sm:grid-cols-2 gap-3 text-gray-700">
-            {keywordPhrases.map((phrase) => (
-              <li key={phrase} className="flex items-center gap-2">
-                <span style={{ color: brandPalette.primary }}>•</span>
-                <span>{phrase}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
 
         {/* Pros & Cons */}
         <section className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
@@ -627,30 +585,6 @@ export default async function OfferPage({ params }: OfferPageProps) {
           </section>
         )}
 
-        {/* User Testimonials */}
-        {testimonials.length > 0 && (
-          <section className="bg-white rounded-lg shadow-sm p-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">What People Say About {brandName}</h2>
-            
-            <div className="space-y-4">
-              {testimonials.map((testimonial, idx) => (
-                <div key={idx} className="bg-gray-50 p-5 rounded-lg border-l-4 border-blue-500">
-                  <div className="flex items-center gap-2 mb-2">
-                    {testimonial.rating && (
-                      <div className="flex">
-                        {[...Array(testimonial.rating)].map((_, i) => (
-                          <span key={i} className="text-yellow-400">★</span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-gray-700 italic mb-2">"{testimonial.text}"</p>
-                  <p className="text-sm text-gray-600">— {testimonial.author}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
 
         {/* FAQ */}
         {faqs.length > 0 && (
@@ -675,28 +609,27 @@ export default async function OfferPage({ params }: OfferPageProps) {
 
         {/* Bottom Line */}
         <section className="text-white rounded-lg shadow-lg p-8 mb-8" style={{ background: `linear-gradient(135deg, ${brandPalette.primary}, ${brandPalette.secondary})` }}>
-          <h2 className="text-3xl font-bold mb-4">Bottom Line</h2>
-          <p className="text-lg leading-relaxed mb-6">
-            {brandName} stands out as a solid choice for {bestFor.toLowerCase()}. 
-            With {pros[0]?.toLowerCase() || "strong features"} and {pros[1]?.toLowerCase() || "competitive pricing"}, 
-            it delivers excellent value in the {category.toLowerCase()} space. 
-            {editorialScore >= 8.0 
-              ? " We highly recommend giving it a try." 
-              : " It's worth considering for your needs."}
+          <h2 className="text-3xl font-bold mb-4">Our Take</h2>
+          <p className="text-lg leading-relaxed mb-4">
+            Based on our research, {brandName} appears to be a capable option in the {category.toLowerCase()} space,
+            particularly for {bestFor.toLowerCase()}.
+            {pros[0] && ` Notable strengths include ${pros[0].toLowerCase()}`}
+            {pros[1] && ` and ${pros[1].toLowerCase()}`}.
+          </p>
+          <p className="text-sm leading-relaxed mb-6 opacity-90">
+            As with any product, we recommend visiting the official {brandName} website to verify current features and pricing before making a decision. Individual experience may vary.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 items-center">
             <PopunderButton
               href={clickHref}
               popunderUrl={popunderUrl}
-              className="px-8 py-4 bg-white text-blue-600 font-bold rounded-lg hover:bg-gray-100 transition text-lg"
+              className="px-8 py-4 bg-white font-bold rounded-lg hover:bg-gray-100 transition text-lg"
+              style={{ color: brandPalette.primary }}
             >
-              Try {brandName} Now →
+              Visit {brandName} →
             </PopunderButton>
-            <div className="flex items-center gap-2 text-blue-100">
-              <span className="text-2xl font-bold">{editorialScore}/10</span>
-              <span>Editorial Score</span>
-            </div>
+            <span className="text-sm opacity-80">Official website — see current offers</span>
           </div>
         </section>
 
@@ -704,39 +637,36 @@ export default async function OfferPage({ params }: OfferPageProps) {
         <footer className="bg-slate-900 text-slate-200 rounded-lg p-10 mt-10">
           <div className="grid lg:grid-cols-[1.4fr_1fr_1fr] gap-10">
             <div>
-              <div className="text-white text-lg font-semibold mb-3">Prelander Editorial</div>
+              <div className="text-white text-lg font-semibold mb-3">About This Review</div>
               <p className="text-sm text-slate-300 leading-relaxed mb-4">
-                Independent reviews and comparisons to help travelers make smarter decisions. We analyze
-                features, pricing, and user feedback so you can choose the right option with confidence.
+                This review was written by our editorial team based on publicly available information, feature analysis, and independent research. We are not affiliated with {brandName}. Our goal is to help consumers make informed decisions by providing honest, transparent reviews.
               </p>
-              <div className="text-xs text-slate-400">Review date: {currentDate}</div>
+              <div className="text-xs text-slate-400">Last updated: {currentDate}</div>
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-white mb-3 uppercase tracking-wide">Resources</h3>
+              <h3 className="text-sm font-semibold text-white mb-3 uppercase tracking-wide">Pages</h3>
               <ul className="text-sm text-slate-300 space-y-2">
-                <li>How we review</li>
-                <li>Editorial standards</li>
+                <li><a href="/about" className="hover:text-white transition">About Us</a></li>
+                <li><a href="/about#methodology" className="hover:text-white transition">How We Review</a></li>
                 <li>Contact: support@prelander.ai</li>
               </ul>
             </div>
             <div>
               <h3 className="text-sm font-semibold text-white mb-3 uppercase tracking-wide">Legal</h3>
               <ul className="text-sm text-slate-300 space-y-2">
-                <li>
-                  <a href="/privacy-policy" className="hover:text-white transition">Privacy Policy</a>
-                </li>
-                <li>Cookie preferences</li>
-                <li>Affiliate disclosure</li>
+                <li><a href="/privacy-policy" className="hover:text-white transition">Privacy Policy</a></li>
+                <li><a href="/terms" className="hover:text-white transition">Terms of Use</a></li>
+                <li><a href="/about#disclosure" className="hover:text-white transition">Affiliate Disclosure</a></li>
               </ul>
             </div>
           </div>
           <div className="mt-8 border-t border-slate-800 pt-5 text-xs text-slate-400">
-            <strong>Advertising Disclosure:</strong> This is an independent review. We may earn a commission when
-            you click links to {brandName}, which helps support our research. Our editorial content is not
-            influenced by advertisers or affiliate partnerships.
+            <strong>Advertising Disclosure:</strong> This site may receive compensation through affiliate links.
+            When you click a link and make a purchase, we may earn a commission at no extra cost to you. This does not
+            affect our editorial opinions, which are based on independent research. All trademarks belong to their respective owners.
           </div>
           <div className="mt-4 text-xs text-slate-500">
-            © {new Date().getFullYear()} Prelander Editorial. All rights reserved.
+            © {new Date().getFullYear()} Prelander Editorial. All rights reserved. All product names, logos, and brands are property of their respective owners.
           </div>
         </footer>
       </div>
