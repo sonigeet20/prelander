@@ -5,6 +5,7 @@ import { slugify } from "@/lib/slug";
 import { PopunderButton } from "@/components/PopunderButton";
 import { AutoTriggerLogic } from "@/components/AutoTriggerLogic";
 import type { BrandFactPack } from "@/lib/ai-research";
+import { createSpinner } from "@/lib/content-spin";
 
 export const dynamic = "force-dynamic";
 
@@ -248,6 +249,23 @@ export default async function OfferPage({ params }: OfferPageProps) {
     day: "numeric" 
   });
 
+  // Content spinning engine — produces unique wording per brand
+  const spin = createSpinner({
+    brandName,
+    category,
+    bestFor,
+    tagline: tagline || "",
+    cluster,
+    isTravel,
+    pricingInfo,
+  });
+
+  // Rich content from GPT (new fields)
+  const detailedReview = factPack?.detailedReview || [];
+  const historyBlurb = factPack?.historyBlurb || "";
+  const comparisonNotes = factPack?.comparisonNotes || "";
+  const featureDescriptions = factPack?.featureDescriptions || [];
+
   return (
     <div
       className="min-h-screen bg-gray-50"
@@ -452,15 +470,48 @@ export default async function OfferPage({ params }: OfferPageProps) {
         {/* In a Nutshell */}
         <section className="bg-gradient-to-br from-white rounded-lg shadow-sm p-6 mb-8" style={{ backgroundColor: brandPalette.soft, borderColor: brandPalette.accent, borderWidth: 1 }}>
           <h2 className="text-2xl font-bold mb-4" style={{ color: brandPalette.secondary }}>In a Nutshell: What Is {brandName}?</h2>
-          <p className="text-gray-700 leading-relaxed mb-4">
-            {tagline} {benefits[0] && `One of ${brandName}'s key strengths is that it ${benefits[0].toLowerCase()}. `}
-            Our editorial team spent time evaluating {brandName} based on its features, pricing transparency, user interface, and overall value proposition in the {category.toLowerCase()} space.
-          </p>
-          <p className="text-gray-700 leading-relaxed mb-4">
-            {brandName} positions itself as a solution for {bestFor.toLowerCase()}. In this review, we break down what {brandName} does well, where it falls short, and whether it may be the right fit for your needs based on publicly available information and our own hands-on assessment.
-          </p>
+          {/* Spun intro paragraphs — unique per brand */}
+          {spin.introBlock().map((para, i) => (
+            <p key={`intro-${i}`} className="text-gray-700 leading-relaxed mb-4">{para}</p>
+          ))}
           <p className="text-gray-600 leading-relaxed text-sm">
             <em>Note: The information in this review is based on publicly available data and our editorial team&apos;s independent analysis. Individual results may vary. Please visit the official {brandName} website for the most up-to-date information.</em>
+          </p>
+        </section>
+
+        {/* Detailed Review — GPT-generated long-form content */}
+        {detailedReview.length > 0 && (
+          <section className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
+            <h2 className="text-2xl font-bold mb-4" style={{ color: brandPalette.secondary }}>{brandName}: A Closer Look</h2>
+            {detailedReview.map((para, i) => (
+              <p key={`review-${i}`} className="text-gray-700 leading-relaxed mb-4">{para}</p>
+            ))}
+            {/* Spun comparison paragraph */}
+            <h3 className="text-lg font-semibold text-gray-900 mt-6 mb-3">How Does {brandName} Compare?</h3>
+            <p className="text-gray-700 leading-relaxed mb-4">
+              {comparisonNotes || spin.comparisonParagraph()}
+            </p>
+            {/* Spun pricing discussion */}
+            <h3 className="text-lg font-semibold text-gray-900 mt-6 mb-3">Pricing and Value</h3>
+            <p className="text-gray-700 leading-relaxed mb-4">
+              {spin.pricingParagraph()}
+            </p>
+            {/* Spun drawback transparency */}
+            <h3 className="text-lg font-semibold text-gray-900 mt-6 mb-3">Where It Falls Short</h3>
+            <p className="text-gray-700 leading-relaxed">
+              {spin.drawbackParagraph()}
+            </p>
+          </section>
+        )}
+
+        {/* Brand Background / History */}
+        <section className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
+          <h2 className="text-2xl font-bold mb-4" style={{ color: brandPalette.secondary }}>Background: The Story Behind {brandName}</h2>
+          <p className="text-gray-700 leading-relaxed mb-4">
+            {historyBlurb || spin.historyParagraph()}
+          </p>
+          <p className="text-gray-700 leading-relaxed">
+            {spin.transition(0)}, {brandName} continues to iterate on its {category.toLowerCase()} {isTravel ? "platform" : "offering"}, responding to both user feedback and shifts in the competitive landscape. {spin.hedge(0)} this willingness to evolve is a positive signal for prospective users evaluating {brandName} as a long-term solution.
           </p>
         </section>
 
@@ -468,22 +519,25 @@ export default async function OfferPage({ params }: OfferPageProps) {
         <section className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
           <h2 className="text-2xl font-bold mb-4" style={{ color: brandPalette.secondary }}>How We Evaluated {brandName}</h2>
           <p className="text-gray-700 leading-relaxed mb-4">
-            Our editorial team evaluates products and services based on several factors. We look at publicly available information including the official website, published pricing, feature documentation, and user feedback from reputable third-party review platforms. We do not fabricate reviews or testimonials.
+            {spin.methodologyParagraph()}
           </p>
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-3 gap-4 mb-6">
             <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
-              <div className="text-sm font-semibold text-gray-900 mb-2">Features & Functionality</div>
-              <p className="text-xs text-gray-600">We assess the core feature set, ease of use, and how well the product delivers on its promises.</p>
+              <div className="text-sm font-semibold text-gray-900 mb-2">Features &amp; Functionality</div>
+              <p className="text-xs text-gray-600">We assess the core feature set, ease of use, and how well the product delivers on its promises compared to alternatives in the {category.toLowerCase()} market.</p>
             </div>
             <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
-              <div className="text-sm font-semibold text-gray-900 mb-2">Pricing & Value</div>
-              <p className="text-xs text-gray-600">We compare pricing against competitors and evaluate whether the features justify the cost.</p>
+              <div className="text-sm font-semibold text-gray-900 mb-2">Pricing &amp; Value</div>
+              <p className="text-xs text-gray-600">We compare pricing against competitors and evaluate whether the features justify the cost for the target audience: {bestFor.toLowerCase()}.</p>
             </div>
             <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
               <div className="text-sm font-semibold text-gray-900 mb-2">User Experience</div>
-              <p className="text-xs text-gray-600">We consider the overall user experience, including setup, interface design, and customer support availability.</p>
+              <p className="text-xs text-gray-600">We consider the overall user experience, including setup complexity, interface design, documentation quality, and customer support availability.</p>
             </div>
           </div>
+          <p className="text-sm text-gray-500 italic">
+            Our assessment scores reflect editorial opinion, not absolute rankings. We encourage readers to weigh multiple sources and try {brandName} for themselves before making a decision.
+          </p>
         </section>
 
         {/* Highlights */}
@@ -550,19 +604,24 @@ export default async function OfferPage({ params }: OfferPageProps) {
           </div>
         </section>
 
-        {/* Features & Services */}
+        {/* Features & Services — expanded with descriptions */}
         {features.length > 0 && (
           <section className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
-            <h2 className="text-2xl font-bold mb-6" style={{ color: brandPalette.secondary }}>
+            <h2 className="text-2xl font-bold mb-2" style={{ color: brandPalette.secondary }}>
               What Services and Features Does {brandName} Offer?
             </h2>
+            <p className="text-gray-600 mb-6">
+              {spin.hedge(1)} {brandName} offers a range of tools and capabilities in the {category.toLowerCase()} space. Below is a breakdown of the key features {spin.weFound(0)} most relevant during our review.
+            </p>
             
             <div className="space-y-6">
-              {brandedFeatures.slice(0, 4).map((feature, idx) => (
-                <div key={idx}>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{feature}</h3>
+              {brandedFeatures.slice(0, 6).map((feature, idx) => (
+                <div key={idx} className="border-l-4 pl-4" style={{ borderColor: idx % 2 === 0 ? brandPalette.primary : brandPalette.accent }}>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature}</h3>
                   <p className="text-gray-700 leading-relaxed">
-                    {brandedBenefits[idx] || `${brandName} provides comprehensive ${feature.toLowerCase()} capabilities designed for ${bestFor.toLowerCase()}.`}
+                    {featureDescriptions[idx]
+                      ? featureDescriptions[idx]
+                      : `${spin.hedge(idx + 2)} ${brandName} provides ${feature.toLowerCase()} capabilities designed for ${bestFor.toLowerCase()}. ${brandedBenefits[idx] ? `A key benefit here is that ${brandedBenefits[idx].toLowerCase()}.` : `This feature contributes to ${brandName}'s overall value in the ${category.toLowerCase()} market.`}`}
                   </p>
                 </div>
               ))}
@@ -574,14 +633,16 @@ export default async function OfferPage({ params }: OfferPageProps) {
         {pricingInfo && (
           <section className="bg-white rounded-lg shadow-sm p-6 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Pricing and Value for Money</h2>
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <div className="text-lg font-semibold text-gray-900 mb-2">Pricing</div>
-              <div className="text-3xl font-bold text-blue-600">{pricingInfo}</div>
+            <div className="bg-gray-50 p-6 rounded-lg mb-4">
+              <div className="text-lg font-semibold text-gray-900 mb-2">Current Pricing</div>
+              <div className="text-3xl font-bold" style={{ color: brandPalette.primary }}>{pricingInfo}</div>
               <p className="text-gray-600 mt-4">
-                {brandName} offers competitive pricing in the {category.toLowerCase()} market, 
-                providing excellent value for the features included.
+                {spin.pricingParagraph()}
               </p>
             </div>
+            <p className="text-xs text-gray-500 italic">
+              Pricing information shown here was accurate at the time of our review but may have changed. Visit the official {brandName} website for the most current pricing.
+            </p>
           </section>
         )}
 
@@ -611,12 +672,12 @@ export default async function OfferPage({ params }: OfferPageProps) {
         <section className="text-white rounded-lg shadow-lg p-8 mb-8" style={{ background: `linear-gradient(135deg, ${brandPalette.primary}, ${brandPalette.secondary})` }}>
           <h2 className="text-3xl font-bold mb-4">Our Take</h2>
           <p className="text-lg leading-relaxed mb-4">
-            Based on our research, {brandName} appears to be a capable option in the {category.toLowerCase()} space,
-            particularly for {bestFor.toLowerCase()}.
-            {pros[0] && ` Notable strengths include ${pros[0].toLowerCase()}`}
-            {pros[1] && ` and ${pros[1].toLowerCase()}`}.
+            {spin.bottomLineParagraph()}
           </p>
-          <p className="text-sm leading-relaxed mb-6 opacity-90">
+          <p className="leading-relaxed mb-4 opacity-90">
+            {detailedReview[2] || `${spin.hedge(3)} ${brandName} has carved out a meaningful position in the ${category.toLowerCase()} space. It is not perfect — no product is — but for ${bestFor.toLowerCase()}, the balance of features, pricing, and user experience makes it a credible option that warrants serious consideration.`}
+          </p>
+          <p className="text-sm leading-relaxed mb-6 opacity-80">
             As with any product, we recommend visiting the official {brandName} website to verify current features and pricing before making a decision. Individual experience may vary.
           </p>
           

@@ -7,6 +7,8 @@ export interface BrandFactPack {
   category: string;
   keyBenefits: string[];
   features: string[];
+  /** A longer description per feature (same order as features[]) */
+  featureDescriptions?: string[];
   targetAudience?: string;
   pricingInfo?: string;
   trustSignals: string[];
@@ -19,6 +21,12 @@ export interface BrandFactPack {
   bestFor?: string;
   testimonials?: Array<{ author: string; text: string; rating?: number }>;
   heroImageUrl?: string;
+  /** 2–3 paragraph detailed editorial review of the brand */
+  detailedReview?: string[];
+  /** 1 paragraph about the brand's history / background */
+  historyBlurb?: string;
+  /** 1 paragraph comparing the brand to alternatives */
+  comparisonNotes?: string;
   brandColors?: {
     primary: string;
     secondary: string;
@@ -98,13 +106,16 @@ CRITICAL RULES:
 3. "category" must be precise (e.g. "Antivirus Software", "Flight Search Engine", "VPN Service", "Password Manager").
 4. "editorialScore" should be realistic (6.0–9.5) based on ${ctx.brandName}'s actual market reputation.
 5. "pros" and "cons" must be factual statements about ${ctx.brandName} as a product/service. 4–6 pros, 2–4 cons. Each 20–100 chars.
-6. "features" should list real ${ctx.brandName} product features.
+6. "features" should list 4–6 real ${ctx.brandName} product features (short labels). Provide a matching "featureDescriptions" array with a 2-3 sentence explanation of each feature.
 7. "testimonials" should sound like real user reviews of ${ctx.brandName} with varied ratings (3–5) and distinct reviewer personas.
-8. "faqItems" should contain 3–5 questions a real user would ask about ${ctx.brandName}, with helpful answers.
+8. "faqItems" should contain 5–7 questions a real user would ask about ${ctx.brandName}. Each answer MUST be 3–5 sentences long with specific, useful detail — not one-liners.
 9. "tagline" should be the brand's actual tagline or a short value proposition (max 150 chars).
 10. "bestFor" should describe the ideal user of ${ctx.brandName} in one sentence.
-11. "heroImageUrl" must be a real, publicly accessible landscape-oriented image URL that visually represents ${ctx.brandName} or its category. Use a high-quality Unsplash URL in the format https://images.unsplash.com/photo-XXXXX?auto=format&fit=crop&w=1200&h=750&q=80. Category-specific guidance: for travel/flights/airlines/booking use an airplane or airport terminal photo; for cybersecurity/antivirus use a digital shield or lock; for VPN use a network or privacy visual; for finance use charts or currency. Pick a real Unsplash photo ID you know exists. Must be landscape/wide, never portrait or sunset/nature.
-12. Return ONLY valid JSON — no markdown fences, no extra text.`;
+11. "detailedReview" must be an array of 3 paragraphs (each 60-100 words) giving an original, substantive editorial review of ${ctx.brandName}. Cover: what it does well, where it falls short, and who benefits most. Write in a natural editorial voice — vary sentence length, use concrete details, avoid generic filler.
+12. "historyBlurb" must be one paragraph (50-80 words) about ${ctx.brandName}'s background, founding story, or market evolution.
+13. "comparisonNotes" must be one paragraph (50-80 words) comparing ${ctx.brandName} to 2-3 named competitors. Mention specific differentiators.
+14. "heroImageUrl" must be a real, publicly accessible landscape-oriented image URL that visually represents ${ctx.brandName} or its category. Use a high-quality Unsplash URL in the format https://images.unsplash.com/photo-XXXXX?auto=format&fit=crop&w=1200&h=750&q=80. Category-specific guidance: for travel/flights/airlines/booking use an airplane or airport terminal photo; for cybersecurity/antivirus use a digital shield or lock; for VPN use a network or privacy visual; for finance use charts or currency. Pick a real Unsplash photo ID you know exists. Must be landscape/wide, never portrait or sunset/nature.
+15. Return ONLY valid JSON — no markdown fences, no extra text.`;
 
   const userPrompt = `Research the brand "${ctx.brandName}" (website: ${ctx.brandUrl}).
 
@@ -115,6 +126,7 @@ Return this exact JSON structure with ALL fields filled in specifically for ${ct
   "category": "specific product category",
   "keyBenefits": ["3-5 specific benefits of using ${ctx.brandName}"],
   "features": ["4-6 actual ${ctx.brandName} product features"],
+  "featureDescriptions": ["2-3 sentence explanation for each feature above"],
   "targetAudience": "who ${ctx.brandName} is built for",
   "pricingInfo": "${ctx.brandName} pricing overview or null",
   "trustSignals": ["2-3 trust/credibility signals for ${ctx.brandName}"],
@@ -134,6 +146,9 @@ Return this exact JSON structure with ALL fields filled in specifically for ${ct
     {"author": "Persona", "text": "Review of ${ctx.brandName}", "rating": 5},
     {"author": "Persona", "text": "Review of ${ctx.brandName}", "rating": 3}
   ],
+  "detailedReview": ["paragraph 1 (60-100 words)", "paragraph 2 (60-100 words)", "paragraph 3 (60-100 words)"],
+  "historyBlurb": "50-80 word paragraph about ${ctx.brandName} background",
+  "comparisonNotes": "50-80 word paragraph comparing ${ctx.brandName} to named competitors",
   "heroImageUrl": "https://images.unsplash.com/photo-XXXXX?auto=format&fit=crop&w=900&q=80"
 }`;
 
@@ -145,8 +160,8 @@ Return this exact JSON structure with ALL fields filled in specifically for ${ct
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: 0.4,
-      max_tokens: 2500,
+      temperature: 0.65,
+      max_tokens: 4000,
       response_format: { type: "json_object" },
     });
 
