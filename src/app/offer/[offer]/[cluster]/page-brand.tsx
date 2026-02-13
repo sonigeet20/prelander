@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { listCampaigns } from "@/lib/campaigns";
 import { slugify } from "@/lib/slug";
-import { PopunderButton } from "@/components/PopunderButton";
+import { ActionButton } from "@/components/ActionButton";
 import type { BrandFactPack } from "@/lib/ai-research";
 
 export const dynamic = "force-dynamic";
@@ -58,7 +58,7 @@ export default async function OfferPage({ params }: OfferPageProps) {
   }
 
   const clickHref = `/click/${offer}/${cluster}`;
-  const popunderUrl = campaign.trackingUrls[0] ?? campaign.destinationUrl;
+  const secondaryHref = campaign.trackingUrls[0] ?? campaign.destinationUrl;
   const clusterTitle = cluster.replace(/-/g, " ");
 
   // Get brand fact pack from research
@@ -145,13 +145,13 @@ export default async function OfferPage({ params }: OfferPageProps) {
 
             {/* CTA */}
             <div className="flex justify-center">
-              <PopunderButton
+              <ActionButton
                 href={clickHref}
-                popunderUrl={popunderUrl}
+                secondaryHref={secondaryHref}
                 className="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all"
               >
                 Get Started with {brandName} →
-              </PopunderButton>
+              </ActionButton>
             </div>
           </div>
         </div>
@@ -221,13 +221,13 @@ export default async function OfferPage({ params }: OfferPageProps) {
           <p className="text-xl mb-8 text-blue-100">
             Join {trustSignals[0] || "thousands"} who trust {brandName}
           </p>
-          <PopunderButton
+          <ActionButton
             href={clickHref}
-            popunderUrl={popunderUrl}
+            secondaryHref={secondaryHref}
             className="inline-flex items-center px-8 py-4 border-2 border-white text-lg font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 shadow-lg"
           >
             Visit {brandName} Now →
-          </PopunderButton>
+          </ActionButton>
         </div>
       </section>
 

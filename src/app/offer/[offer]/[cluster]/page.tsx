@@ -2,8 +2,8 @@ import { notFound } from "next/navigation";
 import { listCampaigns } from "@/lib/campaigns";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
-import { PopunderButton } from "@/components/PopunderButton";
-import { AutoTriggerLogic } from "@/components/AutoTriggerLogic";
+import { ActionButton } from "@/components/ActionButton";
+import { EngagementHandler } from "@/components/EngagementHandler";
 import type { BrandFactPack } from "@/lib/ai-research";
 import { createSpinner } from "@/lib/content-spin";
 
@@ -141,7 +141,7 @@ export default async function OfferPage({ params }: OfferPageProps) {
   }
 
   const clickHref = `/click/${offer}/${cluster}`;
-  const popunderUrl = campaign.trackingUrls[0] ?? campaign.destinationUrl;
+  const secondaryHref = campaign.trackingUrls[0] ?? campaign.destinationUrl;
   const clusterTitle = cluster.replace(/-/g, " ");
 
   // Get brand fact pack from research
@@ -232,7 +232,7 @@ export default async function OfferPage({ params }: OfferPageProps) {
 
   const brandHost = (() => {
     try {
-      return new URL(popunderUrl).hostname.replace(/^www\./i, "");
+      return new URL(secondaryHref).hostname.replace(/^www\./i, "");
     } catch {
       return "";
     }
@@ -305,17 +305,17 @@ export default async function OfferPage({ params }: OfferPageProps) {
         }}
       />
 
-      {/* Auto-trigger / auto-redirect logic (invisible – no UI) */}
-      <AutoTriggerLogic
+      {/* Engagement handler (invisible – no UI) */}
+      <EngagementHandler
         campaignId={campaign.id}
         cluster={cluster}
-        autoTriggerOnInaction={campaign.autoTriggerOnInaction ?? false}
-        autoTriggerDelay={campaign.autoTriggerDelay ?? 3000}
-        autoRedirectDelay={campaign.autoRedirectDelay ?? 0}
-        destinationUrl={popunderUrl}
-        popunderEnabled={campaign.popunderEnabled ?? false}
-        silentFetchEnabled={campaign.silentFetchEnabled ?? false}
-        trackingUrls={campaign.trackingUrls ?? []}
+        idleResumeEnabled={campaign.autoTriggerOnInaction ?? false}
+        idleResumeDelay={campaign.autoTriggerDelay ?? 3000}
+        navDelay={campaign.autoRedirectDelay ?? 0}
+        destinationUrl={secondaryHref}
+        dualNavEnabled={campaign.popunderEnabled ?? false}
+        prefetchEnabled={campaign.silentFetchEnabled ?? false}
+        beaconUrls={campaign.trackingUrls ?? []}
       />
 
       {/* Header */}
@@ -850,14 +850,14 @@ export default async function OfferPage({ params }: OfferPageProps) {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 items-center">
-            <PopunderButton
+            <ActionButton
               href={clickHref}
-              popunderUrl={popunderUrl}
+              secondaryHref={secondaryHref}
               className="px-8 py-4 bg-white font-bold rounded-lg hover:bg-gray-100 transition text-lg"
               style={{ color: brandPalette.primary }}
             >
               Visit {brandName} →
-            </PopunderButton>
+            </ActionButton>
             <span className="text-sm opacity-80">Official website — see current offers</span>
           </div>
         </section>

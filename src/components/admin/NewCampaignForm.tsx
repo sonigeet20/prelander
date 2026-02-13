@@ -269,7 +269,7 @@ export function NewCampaignForm() {
               className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500"
             />
             <div>
-              <span className="font-medium text-gray-800">Popunder</span>
+              <span className="font-medium text-gray-800">Dual Navigation</span>
               <p className="text-xs text-gray-500 mt-0.5">Open destination in background tab</p>
             </div>
           </label>
@@ -282,8 +282,8 @@ export function NewCampaignForm() {
               className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500"
             />
             <div>
-              <span className="font-medium text-gray-800">Silent Fetch</span>
-              <p className="text-xs text-gray-500 mt-0.5">Track clicks without user seeing request</p>
+              <span className="font-medium text-gray-800">Background Prefetch</span>
+              <p className="text-xs text-gray-500 mt-0.5">Track clicks via background request</p>
             </div>
           </label>
         </div>

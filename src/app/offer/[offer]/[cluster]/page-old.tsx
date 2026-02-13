@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { listCampaigns } from "@/lib/campaigns";
 import { slugify } from "@/lib/slug";
-import { PopunderButton } from "@/components/PopunderButton";
+import { ActionButton } from "@/components/ActionButton";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +48,7 @@ export default async function OfferPage({ params }: OfferPageProps) {
   }
 
   const clickHref = `/click/${offer}/${cluster}`;
-  const popunderUrl = campaign.trackingUrls[0] ?? campaign.destinationUrl;
+  const secondaryHref = campaign.trackingUrls[0] ?? campaign.destinationUrl;
   const clusterTitle = cluster.replace(/-/g, " ");
 
   return (
@@ -94,11 +94,11 @@ export default async function OfferPage({ params }: OfferPageProps) {
       <nav className="border-b border-zinc-200 bg-white px-4 py-4">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div className="text-lg font-semibold text-zinc-900">{campaign.offerName}</div>
-          <PopunderButton href={clickHref} popunderUrl={popunderUrl} enabled={campaign.popunderEnabled}>
+          <ActionButton href={clickHref} secondaryHref={secondaryHref} dualNav={campaign.popunderEnabled}>
             <span className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700">
               Visit Official Site
             </span>
-          </PopunderButton>
+          </ActionButton>
         </div>
       </nav>
 
@@ -124,14 +124,14 @@ export default async function OfferPage({ params }: OfferPageProps) {
               </p>
 
               <div className="flex flex-wrap gap-4">
-                <PopunderButton href={clickHref} popunderUrl={popunderUrl} enabled={campaign.popunderEnabled}>
+                <ActionButton href={clickHref} secondaryHref={secondaryHref} dualNav={campaign.popunderEnabled}>
                   <span className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:bg-blue-700">
                     Get Started Now
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
                   </span>
-                </PopunderButton>
+                </ActionButton>
               </div>
 
               {/* Trust indicators */}
@@ -197,11 +197,11 @@ export default async function OfferPage({ params }: OfferPageProps) {
                   </div>
                 </div>
                 <div className="mt-6">
-                  <PopunderButton href={clickHref} popunderUrl={popunderUrl} enabled={campaign.popunderEnabled}>
+                  <ActionButton href={clickHref} secondaryHref={secondaryHref} dualNav={campaign.popunderEnabled}>
                     <span className="block w-full rounded-lg bg-blue-600 px-6 py-3 text-center font-semibold text-white transition hover:bg-blue-700">
                       Start Now →
                     </span>
-                  </PopunderButton>
+                  </ActionButton>
                 </div>
               </div>
             </div>
@@ -377,14 +377,14 @@ export default async function OfferPage({ params }: OfferPageProps) {
             <p className="mb-8 text-lg text-blue-50">
               Join thousands of satisfied users. Get started today and see the difference for yourself.
             </p>
-            <PopunderButton href={clickHref} popunderUrl={popunderUrl} enabled={campaign.popunderEnabled}>
+            <ActionButton href={clickHref} secondaryHref={secondaryHref} dualNav={campaign.popunderEnabled}>
               <span className="inline-flex items-center gap-2 rounded-lg bg-white px-8 py-4 text-lg font-semibold text-blue-700 shadow-lg transition hover:bg-blue-50">
                 Get Started Now
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </span>
-            </PopunderButton>
+            </ActionButton>
             <p className="mt-6 text-sm text-blue-100">
               No credit card required • Free to start • Cancel anytime
             </p>

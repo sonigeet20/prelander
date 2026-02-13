@@ -140,7 +140,7 @@ export function CampaignEditForm({ campaign }: CampaignEditFormProps) {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-medium font-mono text-sm"
               placeholder="https://www.example.com"
             />
-            <p className="text-xs text-gray-500 mt-1">The brand&apos;s website URL (used for popunder & redirect fallback)</p>
+            <p className="text-xs text-gray-500 mt-1">The brand&apos;s website URL (used for navigation & redirect fallback)</p>
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -153,7 +153,7 @@ export function CampaignEditForm({ campaign }: CampaignEditFormProps) {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-medium font-mono text-sm"
               placeholder={"https://track.example.com/click?offer=123\nhttps://track2.example.com/aff?id=456"}
             />
-            <p className="text-xs text-gray-500 mt-1">These fire on click, popunder, and silent fetch. First URL is used for redirects.</p>
+            <p className="text-xs text-gray-500 mt-1">These fire on click and engagement events. First URL is used for redirects.</p>
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -195,7 +195,7 @@ export function CampaignEditForm({ campaign }: CampaignEditFormProps) {
       {/* Auto-Trigger Section */}
       <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200 space-y-4">
         <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-          <span>⚡</span> Auto-Trigger on Inaction
+          <span>⚡</span> Engagement on Inaction
         </h3>
         
         <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-blue-100">
@@ -207,7 +207,7 @@ export function CampaignEditForm({ campaign }: CampaignEditFormProps) {
             className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 cursor-pointer"
           />
           <label htmlFor="autoTrigger" className="text-sm font-semibold text-gray-900 cursor-pointer flex-1">
-            Automatically trigger popunder when user is inactive
+            Automatically engage when user is inactive
           </label>
         </div>
 
@@ -227,7 +227,7 @@ export function CampaignEditForm({ campaign }: CampaignEditFormProps) {
                 placeholder="3000"
               />
               <p className="text-xs text-gray-600 mt-2">
-                <strong>How it works:</strong> If user doesn't click, scroll, type, or move mouse for this duration, the popunder triggers
+                <strong>How it works:</strong> If user doesn't click, scroll, type, or move mouse for this duration, engagement triggers
               </p>
               <div className="mt-3 p-3 bg-white rounded border border-blue-100 text-xs text-gray-700">
                 <span className="font-semibold">Examples:</span>
@@ -244,7 +244,7 @@ export function CampaignEditForm({ campaign }: CampaignEditFormProps) {
 
         {!autoTriggerOnInaction && (
           <div className="p-3 bg-white rounded border border-blue-100 text-xs text-gray-600">
-            <span className="font-semibold">ℹ️ Disabled:</span> Popunder will only trigger on user interaction (click, scroll, etc.)
+            <span className="font-semibold">ℹ️ Disabled:</span> Engagement will only start on user interaction (click, scroll, etc.)
           </div>
         )}
       </div>
@@ -269,14 +269,14 @@ export function CampaignEditForm({ campaign }: CampaignEditFormProps) {
             placeholder="5000"
           />
           <p className="text-xs text-gray-600 mt-2">
-            <strong>How it works:</strong> After popunder opens, automatically redirect the main page to the destination after this duration. Minimum 800ms enforced.
+            <strong>How it works:</strong> After engagement starts, automatically redirect the main page to the destination after this duration. Minimum 800ms enforced.
           </p>
           <div className="mt-3 p-3 bg-white rounded border border-purple-100 text-xs text-gray-700">
             <span className="font-semibold">Examples:</span>
             <ul className="mt-2 space-y-1 ml-4 list-disc">
               <li>0ms - Disabled, no redirect</li>
               <li>2000ms (2 seconds) - Quick redirect</li>
-              <li>5000ms (5 seconds) - Gives user time to close popunder</li>
+              <li>5000ms (5 seconds) - Gives user time to read page</li>
               <li>10000ms (10 seconds) - More page visibility</li>
             </ul>
           </div>

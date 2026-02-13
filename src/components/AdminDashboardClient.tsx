@@ -229,7 +229,7 @@ export function AdminDashboardClient({
             <h3 className="font-bold text-gray-900 mb-3">💡 Getting Started</h3>
             <ul className="text-sm text-gray-700 space-y-2">
               <li>✅ Create campaigns to launch landing pages</li>
-              <li>✅ Configure auto-trigger for popunders</li>
+              <li>✅ Configure engagement settings</li>
               <li>✅ Track clicks and conversions in real-time</li>
               <li>✅ Deploy subdomains on Vercel</li>
             </ul>
@@ -238,7 +238,7 @@ export function AdminDashboardClient({
             <h3 className="font-bold text-gray-900 mb-3">🚀 Next Steps</h3>
             <ul className="text-sm text-gray-700 space-y-2">
               <li>📊 Monitor campaign performance</li>
-              <li>⚙️ Configure auto-trigger delays</li>
+              <li>⚙️ Configure engagement delays</li>
               <li>🔗 Set up custom subdomains</li>
               <li>💰 Track revenue & conversions</li>
             </ul>

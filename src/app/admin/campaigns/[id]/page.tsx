@@ -61,7 +61,7 @@ export default async function CampaignEditPage({ params }: PageProps) {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-gray-900">{campaign.offerName}</h1>
-            <p className="text-gray-600 mt-1">Configure campaign settings and auto-trigger behavior</p>
+            <p className="text-gray-600 mt-1">Configure campaign settings and engagement behavior</p>
           </div>
 
           {/* Quick Actions */}

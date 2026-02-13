@@ -147,11 +147,11 @@ export function OfferForm() {
       <div className="flex flex-wrap gap-4 text-sm">
         <label className="inline-flex items-center gap-2">
           <input name="popunderEnabled" type="checkbox" />
-          Enable popunder
+          Enable dual navigation
         </label>
         <label className="inline-flex items-center gap-2">
           <input name="silentFetchEnabled" type="checkbox" />
-          Enable silent fetch (after click)
+          Enable background prefetch (after click)
         </label>
       </div>
       {error && <p className="text-sm text-red-500">{error}</p>}

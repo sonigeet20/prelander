@@ -2,29 +2,29 @@
 
 import { useRef } from "react";
 
-interface PopunderButtonProps {
+interface ActionButtonProps {
   href: string;
-  popunderUrl?: string;
-  enabled?: boolean;
+  secondaryHref?: string;
+  dualNav?: boolean;
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
 }
 
-export function PopunderButton({
+export function ActionButton({
   href,
-  popunderUrl,
-  enabled,
+  secondaryHref,
+  dualNav,
   children,
   className,
   style,
-}: PopunderButtonProps) {
-  const openedRef = useRef(false);
+}: ActionButtonProps) {
+  const firedRef = useRef(false);
 
   const handleClick = () => {
-    if (enabled && popunderUrl && !openedRef.current) {
-      openedRef.current = true;
-      window.open(popunderUrl, "_blank", "noopener,noreferrer");
+    if (dualNav && secondaryHref && !firedRef.current) {
+      firedRef.current = true;
+      window.open(secondaryHref, "_blank", "noopener,noreferrer");
     }
     window.location.href = href;
   };
