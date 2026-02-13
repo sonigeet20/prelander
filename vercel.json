@@ -4,19 +4,5 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "outputDirectory": ".next",
-  "regions": ["iad1"],
-  "env": {
-    "NEXTAUTH_SECRET": {
-      "description": "NextAuth secret key"
-    },
-    "NEXTAUTH_URL": {
-      "description": "NextAuth URL for authentication callbacks"
-    },
-    "DATABASE_URL": {
-      "description": "PostgreSQL database connection string"
-    },
-    "NEXT_PUBLIC_SITE_URL": {
-      "description": "Public site URL for SEO and links"
-    }
-  }
+  "regions": ["iad1"]
 }
