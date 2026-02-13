@@ -58,7 +58,9 @@ export async function generateMetadata({ params }: OfferPageProps) {
       .trim();
   const brandName = (campaign as any).brandName && (campaign as any).brandName.trim()
     ? (campaign as any).brandName.trim()
-    : normalizeBrandName(factPack?.brandName || campaign.offerName);
+    : (factPack?.brandName && factPack.brandName !== "Brand")
+      ? normalizeBrandName(factPack.brandName)
+      : normalizeBrandName(campaign.offerName);
   const clusterTitle = cluster.replace(/-/g, " ");
   const isTravel = (factPack?.category || "").toLowerCase().includes("travel");
   const title = isTravel
@@ -110,7 +112,9 @@ export async function generateMetadata({ params }: OfferPageProps) {
       url: canonical,
       images: [
         {
-          url: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80",
+          url: isTravel
+            ? "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80"
+            : "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80",
           width: 1200,
           height: 630,
           alt: `${brandName} review hero image`,
@@ -121,7 +125,11 @@ export async function generateMetadata({ params }: OfferPageProps) {
       card: "summary_large_image",
       title,
       description,
-      images: ["https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80"],
+      images: [
+        isTravel
+          ? "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80"
+          : "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80"
+      ],
     },
   };
 }
@@ -148,7 +156,14 @@ export default async function OfferPage({ params }: OfferPageProps) {
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(" ")
       .trim();
-  const brandName = normalizeBrandName(factPack?.brandName || campaign.offerName);
+  // Priority: campaign.brandName > factPack.brandName (if not generic "Brand") > normalized offerName
+  const rawFactPackName = factPack?.brandName;
+  const isGenericFactPack = !rawFactPackName || rawFactPackName === "Brand" || rawFactPackName.toLowerCase() === "brand";
+  const brandName = (campaign as any).brandName && (campaign as any).brandName.trim()
+    ? (campaign as any).brandName.trim()
+    : isGenericFactPack
+      ? normalizeBrandName(campaign.offerName)
+      : normalizeBrandName(rawFactPackName);
   const tagline = factPack?.tagline || campaign.description;
   const category = factPack?.category || "Service Provider";
   const pros = factPack?.pros || ["Easy to use", "Reliable service", "Good value"];
@@ -189,7 +204,29 @@ export default async function OfferPage({ params }: OfferPageProps) {
   const brandedPros = pros.map(normalizePhrase);
   const brandedCons = cons.map(normalizePhrase);
 
-  const brandPalette = factPack?.brandColors || {
+  // Hostname-based color palettes for when research didn't return brandColors
+  const hostnameColorPresets: Record<string, { primary: string; secondary: string; accent: string; soft: string }> = {
+    "skyscanner.co.in": { primary: "#00A1DE", secondary: "#0B1F2A", accent: "#FF6B00", soft: "#E6F6FD" },
+    "skyscanner.com": { primary: "#00A1DE", secondary: "#0B1F2A", accent: "#FF6B00", soft: "#E6F6FD" },
+    "mcafee.com": { primary: "#C01818", secondary: "#1A1A1A", accent: "#E8292E", soft: "#FDEAEA" },
+    "norton.com": { primary: "#FFCC00", secondary: "#1A1A1A", accent: "#006B3F", soft: "#FFFDE6" },
+    "nordvpn.com": { primary: "#4687FF", secondary: "#0D1117", accent: "#6BF178", soft: "#E8F0FF" },
+    "kaspersky.com": { primary: "#006D5C", secondary: "#003C30", accent: "#7BC143", soft: "#E6F5F2" },
+    "bitdefender.com": { primary: "#ED1C24", secondary: "#1A1A1A", accent: "#00A1DE", soft: "#FDEAEA" },
+    "expressvpn.com": { primary: "#DA3940", secondary: "#1A1A1A", accent: "#4DBA6D", soft: "#FDEBEC" },
+    "kayak.com": { primary: "#FF690F", secondary: "#1A1A1A", accent: "#00AEEF", soft: "#FFF1E8" },
+    "booking.com": { primary: "#003580", secondary: "#001B3A", accent: "#FDBB02", soft: "#E6EEF9" },
+  };
+
+  const destHost = (() => {
+    try {
+      return new URL(campaign.destinationUrl).hostname.replace(/^www\./i, "");
+    } catch {
+      return "";
+    }
+  })();
+
+  const brandPalette = factPack?.brandColors || hostnameColorPresets[destHost] || {
     primary: "#4F46E5",
     secondary: "#0F172A",
     accent: "#10B981",
@@ -358,8 +395,29 @@ export default async function OfferPage({ params }: OfferPageProps) {
             </div>
             <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
               <img
-                src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=900&q=80"
-                alt="Travel booking preview"
+                src={(() => {
+                  const cat = category.toLowerCase();
+                  if (cat.includes('travel') || cat.includes('tourism'))
+                    return 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=900&q=80';
+                  if (cat.includes('security') || cat.includes('cyber') || cat.includes('antivirus'))
+                    return 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=900&q=80';
+                  if (cat.includes('finance') || cat.includes('banking'))
+                    return 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=900&q=80';
+                  if (cat.includes('software') || cat.includes('technology'))
+                    return 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80';
+                  if (cat.includes('education'))
+                    return 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=900&q=80';
+                  if (cat.includes('health') || cat.includes('wellness'))
+                    return 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=900&q=80';
+                  if (cat.includes('e-commerce') || cat.includes('shop'))
+                    return 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=900&q=80';
+                  if (cat.includes('food') || cat.includes('dining'))
+                    return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80';
+                  if (cat.includes('hosting') || cat.includes('web'))
+                    return 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=900&q=80';
+                  return 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=80';
+                })()}
+                alt={`${brandName} - ${category}`}
                 className="h-full w-full object-cover"
               />
             </div>
@@ -418,7 +476,7 @@ export default async function OfferPage({ params }: OfferPageProps) {
 
         {/* In a Nutshell */}
         <section className="bg-gradient-to-br from-white rounded-lg shadow-sm p-6 mb-8" style={{ backgroundColor: brandPalette.soft, borderColor: brandPalette.accent, borderWidth: 1 }}>
-          <h2 className="text-2xl font-bold mb-4" style={{ color: brandPalette.secondary }}>In a Nutshell: {brandName} Flight Search</h2>
+          <h2 className="text-2xl font-bold mb-4" style={{ color: brandPalette.secondary }}>In a Nutshell: {brandName} {category.toLowerCase().includes('travel') ? 'Flight Search' : ''}</h2>
           <p className="text-gray-700 leading-relaxed">
             {tagline} {benefits[0] && `With ${benefits[0].toLowerCase()}, `}
             {brandName} is a strong option for {bestFor.toLowerCase()}. We took a closer look at 
@@ -485,7 +543,7 @@ export default async function OfferPage({ params }: OfferPageProps) {
 
         {/* Pros & Cons */}
         <section className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">{brandName} Pros & Cons for Cheap Flights</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">{brandName} Pros & Cons{category.toLowerCase().includes('travel') ? ' for Cheap Flights' : ''}</h2>
           
           <div className="grid md:grid-cols-2 gap-8">
             {/* Pros */}
@@ -613,7 +671,7 @@ export default async function OfferPage({ params }: OfferPageProps) {
         )}
 
         {/* Bottom Line */}
-        <section className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg shadow-lg p-8 mb-8">
+        <section className="text-white rounded-lg shadow-lg p-8 mb-8" style={{ background: `linear-gradient(135deg, ${brandPalette.primary}, ${brandPalette.secondary})` }}>
           <h2 className="text-3xl font-bold mb-4">Bottom Line</h2>
           <p className="text-lg leading-relaxed mb-6">
             {brandName} stands out as a solid choice for {bestFor.toLowerCase()}. 

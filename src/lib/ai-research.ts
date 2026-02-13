@@ -143,9 +143,22 @@ export async function extractBrandInfo(url: string): Promise<BrandFactPack> {
   } catch (error) {
     console.error("Brand research error:", error);
     
-    // Return fallback fact pack with generic but reasonable defaults
+    // Derive a better brand name from the URL instead of "Brand"
+    let fallbackBrandName = "Brand";
+    try {
+      const hostname = new URL(url).hostname.replace(/^www\./i, "");
+      const hostPart = hostname.split(".")[0] || "Brand";
+      fallbackBrandName = hostPart
+        .replace(/[_-]+/g, " ")
+        .split(/\s+/)
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ")
+        .trim();
+    } catch {}
+    
+    // Return fallback fact pack with URL-derived brand name
     return {
-      brandName: "Brand",
+      brandName: fallbackBrandName,
       category: "Service Provider",
       keyBenefits: [
         "Comprehensive service offering",
@@ -187,12 +200,15 @@ export async function extractBrandInfo(url: string): Promise<BrandFactPack> {
 
 function inferCategory(content: string): string {
   const categories = [
-    { keywords: ["travel", "flight", "hotel", "booking"], name: "Travel & Tourism" },
-    { keywords: ["finance", "banking", "investment", "trading"], name: "Financial Services" },
-    { keywords: ["software", "app", "tool", "platform"], name: "Software & Technology" },
+    { keywords: ["travel", "flight", "hotel", "booking", "airline", "trip"], name: "Travel & Tourism" },
+    { keywords: ["antivirus", "security", "malware", "vpn", "firewall", "cyber", "threat", "protection", "mcafee", "norton", "kaspersky", "bitdefender"], name: "Cybersecurity" },
+    { keywords: ["finance", "banking", "investment", "trading", "loan", "insurance"], name: "Financial Services" },
+    { keywords: ["software", "app", "tool", "platform", "saas", "cloud"], name: "Software & Technology" },
     { keywords: ["education", "learning", "course", "training"], name: "Education" },
     { keywords: ["health", "fitness", "wellness", "medical"], name: "Health & Wellness" },
-    { keywords: ["shop", "store", "buy", "product"], name: "E-commerce" },
+    { keywords: ["shop", "store", "buy", "product", "ecommerce"], name: "E-commerce" },
+    { keywords: ["food", "restaurant", "recipe", "delivery", "meal"], name: "Food & Dining" },
+    { keywords: ["hosting", "domain", "server", "website", "web hosting"], name: "Web Hosting" },
   ];
 
   for (const cat of categories) {
@@ -404,6 +420,54 @@ function extractBrandColors(html: string, brandName: string, url: string): {
       secondary: "#001B3A",
       accent: "#FDBB02",
       soft: "#E6EEF9",
+    },
+    "mcafee.com": {
+      primary: "#C01818",
+      secondary: "#1A1A1A",
+      accent: "#E8292E",
+      soft: "#FDEAEA",
+    },
+    "norton.com": {
+      primary: "#FFCC00",
+      secondary: "#1A1A1A",
+      accent: "#006B3F",
+      soft: "#FFFDE6",
+    },
+    "nordvpn.com": {
+      primary: "#4687FF",
+      secondary: "#0D1117",
+      accent: "#6BF178",
+      soft: "#E8F0FF",
+    },
+    "surfshark.com": {
+      primary: "#178DED",
+      secondary: "#0B1929",
+      accent: "#00D4AA",
+      soft: "#E6F4FD",
+    },
+    "expressvpn.com": {
+      primary: "#DA3940",
+      secondary: "#1A1A1A",
+      accent: "#4DBA6D",
+      soft: "#FDEBEC",
+    },
+    "kaspersky.com": {
+      primary: "#006D5C",
+      secondary: "#003C30",
+      accent: "#7BC143",
+      soft: "#E6F5F2",
+    },
+    "bitdefender.com": {
+      primary: "#ED1C24",
+      secondary: "#1A1A1A",
+      accent: "#00A1DE",
+      soft: "#FDEAEA",
+    },
+    "avast.com": {
+      primary: "#FF7800",
+      secondary: "#1E1E1E",
+      accent: "#6C2BD9",
+      soft: "#FFF4E6",
     },
   };
 
