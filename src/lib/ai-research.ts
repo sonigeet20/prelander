@@ -36,78 +36,41 @@ function getOpenAI(): OpenAI {
 }
 
 // ─── Main entry point ─────────────────────────────────────────────
-export async function extractBrandInfo(url: string): Promise<BrandFactPack> {
+// brandName = the display name set by the admin (e.g. "McAfee", "Skyscanner")
+// brandUrl  = the brand's website URL for context (e.g. "https://www.mcafee.com")
+export async function extractBrandInfo(
+  brandUrl: string,
+  brandName?: string,
+): Promise<BrandFactPack> {
   const hostname = (() => {
-    try { return new URL(url).hostname.replace(/^www\./i, ""); }
+    try { return new URL(brandUrl).hostname.replace(/^www\./i, ""); }
     catch { return ""; }
   })();
-  const hostBrand = hostname.split(".")[0] || "Brand";
-  const niceHostBrand = hostBrand
-    .replace(/[_-]+/g, " ")
-    .split(/\s+/)
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(" ")
-    .trim();
 
-  // Step 1 – scrape the page
-  let pageText = "";
-  let pageTitle = "";
-  let metaDescription = "";
-  let rawHtml = "";
+  // Derive a nice name from hostname if none provided
+  const resolvedBrandName = (brandName && brandName.trim())
+    ? brandName.trim()
+    : hostname.split(".")[0]
+        ?.replace(/[_-]+/g, " ")
+        .split(/\s+/)
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ")
+        .trim() || "Brand";
 
-  try {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-      },
-      signal: AbortSignal.timeout(15_000),
-    });
+  // Step 1 – get brand colors from hostname presets (no scraping needed)
+  const brandColors = extractBrandColors("", resolvedBrandName, brandUrl);
 
-    if (response.ok) {
-      rawHtml = await response.text();
-
-      const titleMatch = rawHtml.match(/<title[^>]*>([^<]+)<\/title>/i);
-      pageTitle = titleMatch ? titleMatch[1].trim() : "";
-
-      const descMatch = rawHtml.match(
-        /<meta\s+(?:name=["']description["']\s+content=["']([^"']+)["']|content=["']([^"']+)["']\s+name=["']description["'])/i,
-      );
-      metaDescription = (descMatch?.[1] || descMatch?.[2] || "").trim();
-
-      pageText = rawHtml
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
-        .replace(/<[^>]+>/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
-    }
-  } catch (err) {
-    console.warn(`[AI Research] Failed to fetch ${url}:`, err);
-  }
-
-  // Truncate to ~6000 chars so we stay within token limits
-  const truncated = pageText.slice(0, 6000);
-
-  // Step 2 – extract brand colors from HTML or hostname presets
-  const brandColors = extractBrandColors(rawHtml, niceHostBrand, url);
-
-  // Step 3 – call ChatGPT to build the fact pack
+  // Step 2 – call ChatGPT with brand name + URL (GPT uses its own knowledge)
   const factPack = await callGPTForFactPack({
-    url,
+    brandName: resolvedBrandName,
+    brandUrl,
     hostname,
-    niceHostBrand,
-    pageTitle,
-    metaDescription,
-    pageText: truncated,
   });
 
-  // Merge the extracted colors (CSS/meta extraction is more reliable than GPT guessing)
+  // Merge the preset colors
   factPack.brandColors = brandColors;
 
-  console.log(`[AI Research] Completed for ${url}:`, {
+  console.log(`[AI Research] Completed for "${resolvedBrandName}" (${brandUrl}):`, {
     brandName: factPack.brandName,
     category: factPack.category,
     score: factPack.editorialScore,
@@ -121,61 +84,53 @@ export async function extractBrandInfo(url: string): Promise<BrandFactPack> {
 
 // ─── ChatGPT structured extraction ───────────────────────────────
 async function callGPTForFactPack(ctx: {
-  url: string;
+  brandName: string;
+  brandUrl: string;
   hostname: string;
-  niceHostBrand: string;
-  pageTitle: string;
-  metaDescription: string;
-  pageText: string;
 }): Promise<BrandFactPack> {
-  const systemPrompt = `You are a brand research analyst. Given a brand's website URL and page content, extract a comprehensive fact pack about the brand.
+  const systemPrompt = `You are a senior brand research analyst. You will be given a brand name and its website URL.
+Using your knowledge of the brand, produce a comprehensive, accurate research fact pack.
 
 CRITICAL RULES:
-1. The "brandName" MUST be the actual brand name (e.g. "McAfee", "Skyscanner", "NordVPN"). NEVER return "Brand" as the name.
-2. If the page content is empty or unclear, infer the brand from the URL hostname. For example mcafee.com → "McAfee".
-3. ALL pros, cons, features, benefits must be SPECIFIC to this actual brand — not generic placeholders. Reference the brand by name.
-4. Editorial score should be realistic (6.0–9.5 range) based on the brand's market position.
-5. The "category" should be specific (e.g. "Cybersecurity", "Travel & Tourism", "VPN Service", "Antivirus Software", "Flight Search Engine").
-6. Testimonials should feel realistic with varied ratings (3–5) and diverse user types.
-7. FAQ answers should be informative and specific to the brand's products/services.
-8. Write pros/cons as complete sentences, 15–80 chars each.
-9. Return ONLY valid JSON — no markdown, no code fences.`;
+1. "brandName" MUST be exactly "${ctx.brandName}". Never return "Brand" or a placeholder.
+2. Every field must be SPECIFIC to ${ctx.brandName} — no generic text. Always mention the brand by name.
+3. "category" must be precise (e.g. "Antivirus Software", "Flight Search Engine", "VPN Service", "Password Manager").
+4. "editorialScore" should be realistic (6.0–9.5) based on ${ctx.brandName}'s actual market reputation.
+5. "pros" and "cons" must be factual statements about ${ctx.brandName} as a product/service. 4–6 pros, 2–4 cons. Each 20–100 chars.
+6. "features" should list real ${ctx.brandName} product features.
+7. "testimonials" should sound like real user reviews of ${ctx.brandName} with varied ratings (3–5) and distinct reviewer personas.
+8. "faqItems" should contain 3–5 questions a real user would ask about ${ctx.brandName}, with helpful answers.
+9. "tagline" should be the brand's actual tagline or a short value proposition (max 150 chars).
+10. "bestFor" should describe the ideal user of ${ctx.brandName} in one sentence.
+11. Return ONLY valid JSON — no markdown fences, no extra text.`;
 
-  const userPrompt = `Analyze this brand and return a JSON fact pack.
+  const userPrompt = `Research the brand "${ctx.brandName}" (website: ${ctx.brandUrl}).
 
-URL: ${ctx.url}
-Hostname: ${ctx.hostname}
-Page Title: ${ctx.pageTitle || "(not available)"}
-Meta Description: ${ctx.metaDescription || "(not available)"}
-
-Page Content (first 6000 chars):
-${ctx.pageText || "(page content could not be fetched – use your knowledge of the brand based on the URL/hostname to generate the fact pack)"}
-
-Return this exact JSON structure (all fields required):
+Return this exact JSON structure with ALL fields filled in specifically for ${ctx.brandName}:
 {
-  "brandName": "ActualBrandName",
-  "tagline": "brand's tagline or value proposition (max 150 chars)",
-  "category": "specific category",
-  "keyBenefits": ["benefit1", "benefit2", "benefit3"],
-  "features": ["feature1", "feature2", "feature3", "feature4"],
-  "targetAudience": "who this brand serves",
-  "pricingInfo": "pricing summary or null if unknown",
-  "trustSignals": ["trust signal 1", "trust signal 2"],
-  "useCases": ["use case 1", "use case 2"],
+  "brandName": "${ctx.brandName}",
+  "tagline": "${ctx.brandName}'s actual tagline or value proposition",
+  "category": "specific product category",
+  "keyBenefits": ["3-5 specific benefits of using ${ctx.brandName}"],
+  "features": ["4-6 actual ${ctx.brandName} product features"],
+  "targetAudience": "who ${ctx.brandName} is built for",
+  "pricingInfo": "${ctx.brandName} pricing overview or null",
+  "trustSignals": ["2-3 trust/credibility signals for ${ctx.brandName}"],
+  "useCases": ["2-3 real use cases for ${ctx.brandName}"],
   "faqItems": [
-    {"question": "Question about brand?", "answer": "Detailed answer"},
-    {"question": "Another question?", "answer": "Detailed answer"},
-    {"question": "Third question?", "answer": "Detailed answer"}
+    {"question": "What is ${ctx.brandName}?", "answer": "detailed answer"},
+    {"question": "How much does ${ctx.brandName} cost?", "answer": "detailed answer"},
+    {"question": "Is ${ctx.brandName} safe/reliable?", "answer": "detailed answer"}
   ],
   "tone": "professional",
-  "pros": ["Specific pro sentence 1", "Specific pro sentence 2", "Specific pro sentence 3", "Specific pro sentence 4"],
-  "cons": ["Specific con sentence 1", "Specific con sentence 2", "Specific con sentence 3"],
+  "pros": ["4-6 factual pros about ${ctx.brandName}"],
+  "cons": ["2-4 honest cons about ${ctx.brandName}"],
   "editorialScore": 8.0,
-  "bestFor": "specific audience description",
+  "bestFor": "the ideal ${ctx.brandName} user",
   "testimonials": [
-    {"author": "User Type", "text": "Realistic review mentioning brand by name", "rating": 4},
-    {"author": "User Type", "text": "Another realistic review", "rating": 5},
-    {"author": "User Type", "text": "Critical but fair review", "rating": 3}
+    {"author": "Persona", "text": "Review of ${ctx.brandName}", "rating": 4},
+    {"author": "Persona", "text": "Review of ${ctx.brandName}", "rating": 5},
+    {"author": "Persona", "text": "Review of ${ctx.brandName}", "rating": 3}
   ]
 }`;
 
@@ -197,7 +152,7 @@ Return this exact JSON structure (all fields required):
 
     // Validate and patch critical fields
     if (!parsed.brandName || parsed.brandName === "Brand") {
-      parsed.brandName = ctx.niceHostBrand;
+      parsed.brandName = ctx.brandName;
     }
     if (!parsed.category) parsed.category = "Service Provider";
     if (!parsed.pros || parsed.pros.length === 0) {
@@ -251,14 +206,8 @@ Return this exact JSON structure (all fields required):
     return parsed;
   } catch (error) {
     console.error("[AI Research] GPT call failed:", error);
-    // Final fallback – still use hostname brand name, never "Brand"
-    return buildFallbackFactPack(
-      ctx.niceHostBrand,
-      ctx.url,
-      ctx.pageTitle,
-      ctx.metaDescription,
-      ctx.pageText,
-    );
+    // Final fallback – still use actual brand name, never "Brand"
+    return buildFallbackFactPack(ctx.brandName, ctx.brandUrl);
   }
 }
 
@@ -266,15 +215,12 @@ Return this exact JSON structure (all fields required):
 function buildFallbackFactPack(
   brandName: string,
   url: string,
-  pageTitle: string,
-  metaDescription: string,
-  pageText: string,
 ): BrandFactPack {
-  const category = inferCategory(pageText || pageTitle || url);
+  const category = inferCategory(brandName + " " + url);
 
   return {
     brandName,
-    tagline: metaDescription?.slice(0, 150) || `${brandName} – ${category}`,
+    tagline: `${brandName} – ${category}`,
     category,
     keyBenefits: [
       `${brandName} comprehensive service offering`,

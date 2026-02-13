@@ -30,11 +30,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Extract brand info from first URL
+    // Extract brand info using GPT — brand name + URL, no scraping
     const brandUrl = campaign.brandUrls[0];
-    console.log(`Researching brand: ${brandUrl}`);
+    const brandName = campaign.brandName || campaign.offerName;
+    console.log(`Researching brand: "${brandName}" via ${brandUrl}`);
     
-    const factPack = await extractBrandInfo(brandUrl);
+    const factPack = await extractBrandInfo(brandUrl, brandName);
 
     // Store in campaign metadata
     const existingMeta = (campaign.metadata as Record<string, unknown>) || {};
