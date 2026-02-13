@@ -196,7 +196,7 @@ export default async function OfferPage({ params }: OfferPageProps) {
   const normalizePhrase = (phrase: string) =>
     phrase.toLowerCase().includes(brandName.toLowerCase())
       ? phrase
-      : `${brandName} ${phrase.charAt(0).toLowerCase()}${phrase.slice(1)}`;
+      : `${brandName} ${phrase}`;
   const brandedHighlights = highlights.map(normalizePhrase);
   const brandedFeatures = features.map(normalizePhrase);
   const brandedBenefits = benefits.map(normalizePhrase);

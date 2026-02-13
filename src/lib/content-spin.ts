@@ -97,9 +97,9 @@ export function createSpinner(ctx: SpinContext) {
   ];
 
   const pricingParaTemplates = ctx.pricingInfo ? [
-    `On the pricing front, ${bn} comes in at ${ctx.pricingInfo}. Relative to what you get, this is a ${competitive} price point in the ${cat} ${landscape}. We would encourage prospective buyers to check the official website for the latest pricing, as these figures can change.`,
-    `${bn} is priced at ${ctx.pricingInfo}, which positions it competitively within the ${cat} ${landscape}. Whether this represents good value depends on your specific needs — but for ${bf}, the price-to-feature ratio is reasonable.`,
-    `At ${ctx.pricingInfo}, ${bn} sits in a fair range for the ${cat} market. Keep in mind that pricing tiers and promotions change frequently, so verifying on the official site is always a good idea.`,
+    `When it comes to pricing, ${bn} offers: ${ctx.pricingInfo}. Relative to what you get, this is a ${competitive} value proposition in the ${cat} ${landscape}. We would encourage prospective buyers to check the official website for the latest pricing, as these figures can change.`,
+    `${bn} pricing is as follows: ${ctx.pricingInfo}. Whether this represents good value depends on your specific needs — but for ${bf}, the price-to-feature ratio is reasonable in the current ${cat} ${landscape}.`,
+    `Regarding cost, ${bn} positions itself as follows: ${ctx.pricingInfo}. Keep in mind that pricing structures and promotional offers change frequently, so verifying on the official site is always a good idea.`,
   ] : [
     `${bn} does not prominently advertise a single price point, which is common in the ${cat} ${landscape} — pricing often varies by plan, region, or promotional period. We recommend visiting the official ${bn} website for up-to-date pricing details.`,
     `Pricing for ${bn} is structured across multiple tiers, with exact figures available on their official website. This flexible approach means different user segments can find a plan that fits their budget.`,
