@@ -130,6 +130,38 @@ export function createSpinner(ctx: SpinContext) {
 
   /* ── Assembled paragraphs ──────────────────────────────── */
 
+  /* ── High-intent / deal-oriented templates ─────────── */
+
+  const dealIntroTravel = [
+    `Finding the best deal on ${bn} comes down to timing, flexibility, and knowing where to look. Below are strategies our team has identified that can help you save money on your next booking.`,
+    `Getting the most out of ${bn} does not require insider knowledge — but a few smart habits can make a real difference to what you pay. Here are practical tips that can stretch your travel budget further.`,
+    `Whether you are a seasoned traveler or booking your first trip through ${bn}, these money-saving strategies can help you lock in better prices and avoid common pitfalls.`,
+  ];
+
+  const dealIntroGeneral = [
+    `Smart shopping means knowing how to maximize value. We have put together actionable tips for getting the best deal when using ${bn}, based on ${thorough} research and real user strategies.`,
+    `Before you commit to a purchase through ${bn}, it is ${worth} knowing a few strategies that can help you save money and get the most out of the ${offering}. Here is what we recommend.`,
+    `${bn} offers ${competitive} pricing in the ${cat} ${landscape}, but there are still ways to optimize your spending. These tips can help you find the sweet spot between features and cost.`,
+  ];
+
+  const guideIntroTemplates = [
+    `New to ${bn}? Getting started is straightforward. We have broken the process down into clear steps so you can go from sign-up to active use in minutes, without missing anything important.`,
+    `If you have decided ${bn} is ${worth}, here is exactly how to set up your account and start using the ${offering} effectively. We have walked through the process step by step.`,
+    `Setting up ${bn} for the first time? This quick-start guide covers everything from creating your account to making your first ${ctx.isTravel ? "search" : "purchase"} — no technical knowledge required.`,
+  ];
+
+  const alternativesIntroTemplates = [
+    `${bn} is not the only player in the ${cat} ${landscape}. To help you make an informed choice, we have compared it head-to-head against three popular alternatives on the dimensions that matter most.`,
+    `How does ${bn} stack up against the competition? We compared it to three other ${cat} tools across key criteria. Here is where each one shines — and where it falls short.`,
+    `Choosing the right ${cat} ${offering} means understanding the trade-offs. Below is a side-by-side look at ${bn} and its closest competitors, with honest assessments of each.`,
+  ];
+
+  const timingIntroTemplates = [
+    `Timing can significantly affect the value you get from ${bn}. ${ctx.isTravel ? "Flight prices fluctuate based on season, day of week, and how far in advance you book." : "Promotional cycles, seasonal sales, and renewal windows all create opportunities to save."} Here is what to keep in mind.`,
+    `When you ${ctx.isTravel ? "book" : "buy"} matters just as much as where. Understanding ${bn}'s pricing patterns and ${ctx.isTravel ? "fare trends" : "promotional calendar"} can help you time your ${ctx.isTravel ? "booking" : "purchase"} for maximum savings.`,
+    `One of the most overlooked ways to save with ${bn} is simply choosing the right moment. ${ctx.isTravel ? "Airfares and hotel rates" : "Subscription prices and bundle deals"} vary considerably throughout the year — here is what our research ${suggests}.`,
+  ];
+
   return {
     /** 2–3 intro paragraphs for "In a Nutshell / What Is …?" */
     introBlock(): string[] {
@@ -166,6 +198,28 @@ export function createSpinner(ctx: SpinContext) {
     /** Brand history / background paragraph */
     historyParagraph(): string {
       return pick(historyTemplates, seed, 90);
+    },
+
+    /** Deal / savings intro paragraph */
+    dealIntroParagraph(): string {
+      return ctx.isTravel
+        ? pick(dealIntroTravel, seed, 130)
+        : pick(dealIntroGeneral, seed, 130);
+    },
+
+    /** Getting started guide intro paragraph */
+    guideIntroParagraph(): string {
+      return pick(guideIntroTemplates, seed, 140);
+    },
+
+    /** Alternatives comparison intro paragraph */
+    alternativesIntroParagraph(): string {
+      return pick(alternativesIntroTemplates, seed, 150);
+    },
+
+    /** Timing / seasonal advice intro paragraph */
+    timingIntroParagraph(): string {
+      return pick(timingIntroTemplates, seed, 160);
     },
 
     /** Shuffle an array deterministically for this brand */

@@ -27,6 +27,14 @@ export interface BrandFactPack {
   historyBlurb?: string;
   /** 1 paragraph comparing the brand to alternatives */
   comparisonNotes?: string;
+  /** 5 actionable money-saving or deal-finding tips specific to this brand */
+  savingTips?: string[];
+  /** Step-by-step getting started guide (4-6 steps, each a sentence) */
+  gettingStartedSteps?: string[];
+  /** 2-3 named competitors with one-line pros/cons each */
+  alternativesComparison?: Array<{ name: string; advantage: string; disadvantage: string }>;
+  /** Seasonal / timing advice — best time to buy or use the service */
+  seasonalAdvice?: string;
   brandColors?: {
     primary: string;
     secondary: string;
@@ -114,8 +122,12 @@ CRITICAL RULES:
 11. "detailedReview" must be an array of 3 paragraphs (each 60-100 words) giving an original, substantive editorial review of ${ctx.brandName}. Cover: what it does well, where it falls short, and who benefits most. Write in a natural editorial voice — vary sentence length, use concrete details, avoid generic filler.
 12. "historyBlurb" must be one paragraph (50-80 words) about ${ctx.brandName}'s background, founding story, or market evolution.
 13. "comparisonNotes" must be one paragraph (50-80 words) comparing ${ctx.brandName} to 2-3 named competitors. Mention specific differentiators.
-14. "heroImageUrl" must be a real, publicly accessible landscape-oriented image URL that visually represents ${ctx.brandName} or its category. Use a high-quality Unsplash URL in the format https://images.unsplash.com/photo-XXXXX?auto=format&fit=crop&w=1200&h=750&q=80. Category-specific guidance: for travel/flights/airlines/booking use an airplane or airport terminal photo; for cybersecurity/antivirus use a digital shield or lock; for VPN use a network or privacy visual; for finance use charts or currency. Pick a real Unsplash photo ID you know exists. Must be landscape/wide, never portrait or sunset/nature.
-15. Return ONLY valid JSON — no markdown fences, no extra text.`;
+14. "savingTips" must be an array of 5 specific, actionable tips for saving money or getting the best deal when using ${ctx.brandName}. Each tip should be 1-2 sentences. For travel: booking timing, fare alerts, flexible dates, etc. For security: bundle deals, renewal discounts, free trials, etc. Be specific to ${ctx.brandName}.
+15. "gettingStartedSteps" must be an array of 5-6 step-by-step instructions for a new user to get started with ${ctx.brandName}. Each step should be 1-2 sentences explaining exactly what to do. E.g. "Visit ${ctx.brandName}'s website and create a free account" → "Set up your preferences" → etc.
+16. "alternativesComparison" must be an array of 3 objects, each with: "name" (real competitor name), "advantage" (one thing this competitor does better than ${ctx.brandName}), "disadvantage" (one thing ${ctx.brandName} does better). Use real competitor names.
+17. "seasonalAdvice" must be 2-3 sentences about the best time of year or timing strategy for using ${ctx.brandName}. For travel: booking windows, seasonal pricing. For security: renewal periods, sale events. Be specific.
+18. "heroImageUrl" must be a real, publicly accessible landscape-oriented image URL that visually represents ${ctx.brandName} or its category. Use a high-quality Unsplash URL in the format https://images.unsplash.com/photo-XXXXX?auto=format&fit=crop&w=1200&h=750&q=80. Category-specific guidance: for travel/flights/airlines/booking use an airplane or airport terminal photo; for cybersecurity/antivirus use a digital shield or lock; for VPN use a network or privacy visual; for finance use charts or currency. Pick a real Unsplash photo ID you know exists. Must be landscape/wide, never portrait or sunset/nature.
+19. Return ONLY valid JSON — no markdown fences, no extra text.`;
 
   const userPrompt = `Research the brand "${ctx.brandName}" (website: ${ctx.brandUrl}).
 
@@ -149,6 +161,14 @@ Return this exact JSON structure with ALL fields filled in specifically for ${ct
   "detailedReview": ["paragraph 1 (60-100 words)", "paragraph 2 (60-100 words)", "paragraph 3 (60-100 words)"],
   "historyBlurb": "50-80 word paragraph about ${ctx.brandName} background",
   "comparisonNotes": "50-80 word paragraph comparing ${ctx.brandName} to named competitors",
+  "savingTips": ["5 specific money-saving tips for using ${ctx.brandName}"],
+  "gettingStartedSteps": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."],
+  "alternativesComparison": [
+    {"name": "Competitor 1", "advantage": "what they do better", "disadvantage": "what ${ctx.brandName} does better"},
+    {"name": "Competitor 2", "advantage": "what they do better", "disadvantage": "what ${ctx.brandName} does better"},
+    {"name": "Competitor 3", "advantage": "what they do better", "disadvantage": "what ${ctx.brandName} does better"}
+  ],
+  "seasonalAdvice": "2-3 sentences about best timing for using ${ctx.brandName}",
   "heroImageUrl": "https://images.unsplash.com/photo-XXXXX?auto=format&fit=crop&w=900&q=80"
 }`;
 
