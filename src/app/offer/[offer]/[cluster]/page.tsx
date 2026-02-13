@@ -64,13 +64,11 @@ export async function generateMetadata({ params }: OfferPageProps) {
   const travelKeywords = ["travel", "tourism", "flight", "airline", "hotel", "booking", "trip", "vacation", "hostel"];
   const isTravel = travelKeywords.some(k => (factPack?.category || "").toLowerCase().includes(k));
   const title = isTravel
-    ? `${brandName} Cheap Flights & Airline Tickets Review (2026) - ${clusterTitle}`
-    : `${brandName} Review (2026) - ${clusterTitle}`;
-  const description = factPack?.tagline 
-    ? `${factPack.tagline} Read our expert ${brandName} review covering ${factPack.pros?.length || 3} pros, pricing, features, and user testimonials.`
-    : isTravel
-      ? `Complete ${brandName} review. Compare ${brandName} cheap flights, airline ticket deals, features, pricing, pros and cons.`
-      : `Complete ${brandName} review. Expert analysis of features, pricing, pros and cons.`;
+    ? `How to Find Cheap Flights on ${brandName} (${new Date().getFullYear()} Guide) — Tips, Deals & Timing`
+    : `How to Get the Best Deal on ${brandName} (${new Date().getFullYear()} Guide) — Tips, Pricing & Comparison`;
+  const description = isTravel
+    ? `Step-by-step guide to finding cheap flights on ${brandName}. Learn when to book, how to set price alerts, compare fares, and save money on airline tickets in ${new Date().getFullYear()}.`
+    : `Complete guide to getting the best value from ${brandName}. Money-saving tips, step-by-step setup, competitor comparison, and honest pros & cons.`;
   const keywords = isTravel
     ? [
         `${brandName} review`,
@@ -348,15 +346,39 @@ export default async function OfferPage({ params }: OfferPageProps) {
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             {isTravel
-              ? `${brandName} Cheap Flights & Airline Tickets Review (2026)`
-              : `${brandName} Review (2026)`}
+              ? `How to Find Cheap Flights on ${brandName} (${new Date().getFullYear()} Guide)`
+              : `How to Get the Best Deal on ${brandName} (${new Date().getFullYear()} Guide)`}
           </h1>
           <p className="text-xl text-gray-600 mb-6">
-            {tagline}
-            {isTravel && (
-              <> Compare {brandName} flight search, airline ticket deals, and travel booking options.</>
-            )}
+            {isTravel
+              ? `A practical guide to saving money on flights using ${brandName}. We cover booking strategies, timing tips, price alerts, and how ${brandName} compares to alternatives — so you can make an informed decision before you book.`
+              : `Everything you need to know about ${brandName} before you buy. We break down the best strategies for getting value, how to get started, and how it stacks up against the competition.`}
           </p>
+
+          {/* ─── Quick Answer Box ─── */}
+          <div className="rounded-xl border-2 p-5 mb-6" style={{ borderColor: brandPalette.primary, backgroundColor: brandPalette.soft }}>
+            <div className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: brandPalette.primary }}>Quick Answer</div>
+            <p className="text-gray-900 font-medium leading-relaxed">
+              {isTravel
+                ? `Yes, ${brandName} is a legitimate flight comparison tool used by millions of travelers. The best way to save money on ${brandName} is to use flexible date search, set up price alerts for your route, and book 6\u20138 weeks before domestic flights or 2\u20133 months before international trips. Always verify the final price on the airline\u2019s website before booking.`
+                : `${brandName} offers ${pricingInfo || "competitive pricing"} in the ${category.toLowerCase()} market. To get the best deal, compare plans carefully, look for seasonal promotions, and take advantage of any free trial before committing. See our step-by-step guide and money-saving tips below.`}
+            </p>
+          </div>
+
+          {/* ─── Table of Contents ─── */}
+          <nav className="rounded-lg border border-gray-200 bg-white p-5 mb-6">
+            <div className="text-sm font-bold text-gray-900 mb-3">In This Guide</div>
+            <ol className="grid sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm text-gray-600 list-decimal list-inside">
+              <li><a href="#saving-tips" className="hover:text-gray-900 hover:underline">{isTravel ? "How to Find the Cheapest Flights" : "Money-Saving Tips"}</a></li>
+              <li><a href="#getting-started" className="hover:text-gray-900 hover:underline">Step-by-Step Setup Guide</a></li>
+              <li><a href="#best-time" className="hover:text-gray-900 hover:underline">Best Time to {isTravel ? "Book" : "Buy"}</a></li>
+              <li><a href="#comparison" className="hover:text-gray-900 hover:underline">{brandName} vs. Alternatives</a></li>
+              <li><a href="#checklist" className="hover:text-gray-900 hover:underline">{isTravel ? "Booking" : "Buyer\u2019s"} Checklist</a></li>
+              <li><a href="#pros-cons" className="hover:text-gray-900 hover:underline">Pros &amp; Cons</a></li>
+              <li><a href="#features" className="hover:text-gray-900 hover:underline">Features Breakdown</a></li>
+              <li><a href="#faq" className="hover:text-gray-900 hover:underline">FAQ</a></li>
+            </ol>
+          </nav>
 
           {/* Hero Visual */}
           <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-6 mb-6">
@@ -429,18 +451,187 @@ export default async function OfferPage({ params }: OfferPageProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 mb-6">
-            <PopunderButton
-              href={clickHref}
-              popunderUrl={popunderUrl}
-              className="px-6 py-3 text-white font-semibold rounded-lg transition"
-              style={{ backgroundColor: brandPalette.primary }}
-            >
-              Visit {brandName}
-            </PopunderButton>
-            <span className="text-sm text-gray-500">Official website</span>
-          </div>
         </div>
+
+        {/* ═══════════════════════════════════════════════════════
+            USER-INTENT CONTENT (above fold — this is what Google wants)
+            ═══════════════════════════════════════════════════════ */}
+
+        {/* ─── #1: How to Save / Get the Best Deal ─── */}
+        <section id="saving-tips" className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
+          <h2 className="text-2xl font-bold mb-2" style={{ color: brandPalette.secondary }}>
+            {isTravel ? `How to Find the Cheapest Flights on ${brandName}` : `${savingTips.length} Ways to Save Money on ${brandName}`}
+          </h2>
+          <p className="text-gray-600 mb-6">{spin.dealIntroParagraph()}</p>
+
+          {savingTips.length > 0 ? (
+            <div className="space-y-4">
+              {savingTips.map((tip, idx) => (
+                <div key={idx} className="flex gap-4 items-start p-4 rounded-lg" style={{ backgroundColor: idx % 2 === 0 ? brandPalette.soft : "#f9fafb" }}>
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: brandPalette.primary }}>
+                    {idx + 1}
+                  </div>
+                  <p className="text-gray-700 leading-relaxed">{tip}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {(isTravel ? [
+                `Use ${brandName}\u2019s \u201cWhole Month\u201d or flexible date view to spot the cheapest travel days at a glance.`,
+                `Set up price alerts for your desired route \u2014 ${brandName} will email you when fares drop significantly.`,
+                `Search for nearby airports, not just your closest one. A short drive can save hundreds on airfare.`,
+                `Book domestic flights 4\u20138 weeks in advance and international flights 2\u20133 months ahead for the best prices.`,
+                `Avoid booking on weekends if possible. Tuesday and Wednesday flights tend to be cheaper on most routes.`,
+              ] : [
+                `Always check for a free trial before committing to a paid plan on ${brandName}.`,
+                `Compare the feature lists across ${brandName}\u2019s pricing tiers \u2014 the mid-tier plan often offers the best value.`,
+                `Look for bundle deals or annual subscriptions, which are typically 20\u201340% cheaper than monthly billing.`,
+                `Check for student, military, or nonprofit discounts that ${brandName} may offer but not prominently advertise.`,
+                `Time your purchase around major sale events (Black Friday, back-to-school) for the deepest discounts.`,
+              ]).map((tip, idx) => (
+                <div key={idx} className="flex gap-4 items-start p-4 rounded-lg" style={{ backgroundColor: idx % 2 === 0 ? brandPalette.soft : "#f9fafb" }}>
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: brandPalette.primary }}>
+                    {idx + 1}
+                  </div>
+                  <p className="text-gray-700 leading-relaxed">{tip}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* ─── #2: Step-by-Step Getting Started Guide ─── */}
+        <section id="getting-started" className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
+          <h2 className="text-2xl font-bold mb-2" style={{ color: brandPalette.secondary }}>
+            How to Use {brandName}: Step-by-Step Guide
+          </h2>
+          <p className="text-gray-600 mb-6">{spin.guideIntroParagraph()}</p>
+
+          <div className="relative">
+            <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-gray-200" style={{ marginLeft: "15px" }} />
+            <div className="space-y-6">
+              {(gettingStartedSteps.length > 0 ? gettingStartedSteps : (isTravel ? [
+                `Go to ${brandName}\u2019s website or download the mobile app. You can search without creating an account.`,
+                `Enter your departure city, destination, and travel dates. Use the \u201cFlexible dates\u201d option if your schedule allows.`,
+                `Review the results page. ${brandName} shows prices from multiple airlines and booking sites side by side.`,
+                `Use filters to narrow results by number of stops, departure time, airline, or price range.`,
+                `Click on the fare you want. ${brandName} will redirect you to the airline or booking site to complete payment.`,
+                `Set a price alert for your route if prices are higher than expected \u2014 fares often drop before your travel date.`,
+              ] : [
+                `Visit the official ${brandName} website and explore the available plans and pricing.`,
+                `Sign up for a free account or trial to test the core features before buying.`,
+                `Configure your preferences and complete the initial setup wizard.`,
+                `Explore the dashboard and familiarize yourself with key features.`,
+                `Upgrade to a paid plan once you are confident ${brandName} meets your needs.`,
+              ])).map((step, idx) => (
+                <div key={idx} className="flex gap-4 items-start relative">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold z-10" style={{ backgroundColor: brandPalette.primary }}>
+                    {idx + 1}
+                  </div>
+                  <div className="pt-1">
+                    <p className="text-gray-700 leading-relaxed">{step}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── #3: Best Time to Book/Buy ─── */}
+        <section id="best-time" className="rounded-lg p-6 mb-8 border-l-4" style={{ borderColor: brandPalette.accent, backgroundColor: brandPalette.soft }}>
+          <h2 className="text-2xl font-bold mb-3" style={{ color: brandPalette.secondary }}>
+            Best Time to {isTravel ? "Book Flights" : "Buy"} on {brandName}
+          </h2>
+          <p className="text-gray-700 leading-relaxed mb-3">
+            {spin.timingIntroParagraph()}
+          </p>
+          <p className="text-gray-700 leading-relaxed">
+            {seasonalAdvice || (isTravel
+              ? `For domestic flights, the sweet spot is typically 4\u20136 weeks before departure. International flights tend to be cheapest 2\u20134 months out. January and September are generally the cheapest months to fly in most markets. Avoid booking during peak holiday periods (Christmas, Easter, summer school breaks) unless you use ${brandName}\u2019s price alert feature to catch flash sales.`
+              : `The best time to purchase ${brandName} is during annual sales events like Black Friday or end-of-year promotions. If you are on a monthly plan, switching to annual billing often saves 20\u201330%. Watch for seasonal promotions announced on ${brandName}\u2019s website or social media channels.`)}
+          </p>
+        </section>
+
+        {/* ─── #4: Alternatives Comparison Table ─── */}
+        <section id="comparison" className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
+          <h2 className="text-2xl font-bold mb-2" style={{ color: brandPalette.secondary }}>
+            {brandName} vs. Alternatives: Which Is Best for You?
+          </h2>
+          <p className="text-gray-600 mb-6">{spin.alternativesIntroParagraph()}</p>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b-2" style={{ borderColor: brandPalette.primary }}>
+                  <th className="text-left p-3 font-semibold text-gray-900">{isTravel ? "Platform" : "Service"}</th>
+                  <th className="text-left p-3 font-semibold text-green-700">Their Strength</th>
+                  <th className="text-left p-3 font-semibold" style={{ color: brandPalette.primary }}>Where {brandName} Wins</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(alternativesComparison.length > 0 ? alternativesComparison : (isTravel ? [
+                  { name: "Google Flights", advantage: "Deep integration with Google search and calendar", disadvantage: `${brandName} covers more booking sites and OTAs in a single search` },
+                  { name: "Kayak", advantage: "Strong hotel and car rental bundling", disadvantage: `${brandName} has more flexible date search options` },
+                  { name: "Momondo", advantage: "Good for finding hidden budget airlines", disadvantage: `${brandName} has a larger user base and more price alert features` },
+                ] : [
+                  { name: "Competitor A", advantage: "More features at higher price points", disadvantage: `${brandName} offers better value at entry-level tiers` },
+                  { name: "Competitor B", advantage: "Stronger mobile experience", disadvantage: `${brandName} has more comprehensive desktop tooling` },
+                  { name: "Competitor C", advantage: "Free tier available", disadvantage: `${brandName} offers better customer support and documentation` },
+                ])).map((alt, idx) => (
+                  <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
+                    <td className="p-3 font-semibold text-gray-900">{alt.name}</td>
+                    <td className="p-3 text-gray-700">{alt.advantage}</td>
+                    <td className="p-3 text-gray-700">{alt.disadvantage}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <p className="text-xs text-gray-500 italic mt-4">
+            Comparison based on publicly available information. Features and pricing change frequently — verify directly with each provider.
+          </p>
+        </section>
+
+        {/* ─── #5: Pre-Purchase Checklist ─── */}
+        <section id="checklist" className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
+          <h2 className="text-2xl font-bold mb-4" style={{ color: brandPalette.secondary }}>
+            {isTravel ? "Booking" : "Buyer\u2019s"} Checklist: Before You {isTravel ? "Book on " + brandName : "Buy " + brandName}
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Run through this checklist before committing. These steps can save you time, money, and potential headaches.
+          </p>
+          <div className="grid md:grid-cols-2 gap-3">
+            {(isTravel ? [
+              { label: "Compare prices on at least 2\u20133 platforms", detail: "Cross-reference with Google Flights and direct airline sites before booking." },
+              { label: "Try flexible date search", detail: `${brandName}\u2019s flexible dates view often reveals fares that are significantly cheaper just a day or two away.` },
+              { label: "Read the fare terms carefully", detail: "Some of the cheapest fares are non-refundable or charge extra for changes and baggage." },
+              { label: "Set up a price alert for your route", detail: `If your travel dates are not fixed, let ${brandName} notify you when fares drop.` },
+              { label: "Verify the final price on the booking site", detail: "Aggregator prices can occasionally differ from the actual booking price after taxes and fees." },
+              { label: "Factor in total cost (bags, seats, meals)", detail: "The headline fare may not include checked luggage or seat selection \u2014 add those costs to compare fairly." },
+            ] : [
+              { label: "Identify which features you actually need", detail: `Match your needs to the ${brandName} plan that fits best \u2014 don\u2019t overpay for features you won\u2019t use.` },
+              { label: "Check for a free trial or money-back guarantee", detail: `Test ${brandName} hands-on before committing to a long-term plan.` },
+              { label: "Compare at least 2\u20133 alternatives", detail: "See our comparison table above to weigh your options side by side." },
+              { label: "Read the cancellation and refund policy", detail: "Know exactly what happens if you change your mind after purchasing." },
+              { label: "Look for seasonal promotions or discount codes", detail: `${brandName} may offer deals during major sales events \u2014 check before you buy at full price.` },
+              { label: "Verify current pricing on the official website", detail: "Prices shown in guides and reviews may not reflect the very latest offers." },
+            ]).map((item, idx) => (
+              <div key={idx} className="flex gap-3 items-start p-3 rounded-lg bg-gray-50">
+                <div className="flex-shrink-0 w-5 h-5 rounded border-2 mt-0.5" style={{ borderColor: brandPalette.primary }} />
+                <div>
+                  <div className="font-semibold text-sm text-gray-900">{item.label}</div>
+                  <div className="text-xs text-gray-600 mt-0.5">{item.detail}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════════
+            EDITORIAL CONTEXT (supporting content — below fold)
+            ═══════════════════════════════════════════════════════ */}
 
         {/* At a Glance Box */}
         <div className="bg-gradient-to-br p-6 mb-8 rounded-r-lg" style={{ backgroundColor: brandPalette.soft, borderLeftColor: brandPalette.primary, borderLeftWidth: 4 }}>
@@ -544,24 +735,8 @@ export default async function OfferPage({ params }: OfferPageProps) {
           </p>
         </section>
 
-        {/* Highlights */}
-        <section className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
-          <h2 className="text-2xl font-bold mb-4" style={{ color: brandPalette.secondary }}>
-            Why Choose {brandName} for {isTravel ? "Cheap Flights" : category}
-          </h2>
-          <ul className="grid md:grid-cols-2 gap-4 text-gray-700">
-            {brandedHighlights.slice(0, 6).map((item, index) => (
-              <li key={`${item}-${index}`} className="flex items-start gap-2">
-                <span style={{ color: brandPalette.primary }} className="mt-1">✓</span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-
         {/* Pros & Cons */}
-        <section className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
+        <section id="pros-cons" className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">{brandName} Pros & Cons{isTravel ? ' for Cheap Flights' : ''}</h2>
           
           <div className="grid md:grid-cols-2 gap-8">
@@ -595,129 +770,11 @@ export default async function OfferPage({ params }: OfferPageProps) {
               </ul>
             </div>
           </div>
-
-          <div className="mt-8 pt-6 border-t text-center">
-            <PopunderButton
-              href={clickHref}
-              popunderUrl={popunderUrl}
-              className="px-8 py-3 text-white font-semibold rounded-lg transition inline-block"
-              style={{ backgroundColor: brandPalette.primary }}
-            >
-              Visit {brandName}
-            </PopunderButton>
-          </div>
         </section>
-
-        {/* ═══ HIGH-INTENT SECTION: How to Get the Best Deal ═══ */}
-        {savingTips.length > 0 && (
-          <section className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
-            <h2 className="text-2xl font-bold mb-2" style={{ color: brandPalette.secondary }}>
-              How to Get the Best {isTravel ? "Flight Deals" : "Deal"} on {brandName} in 2026
-            </h2>
-            <p className="text-gray-600 mb-6">{spin.dealIntroParagraph()}</p>
-
-            <div className="space-y-4">
-              {savingTips.map((tip, idx) => (
-                <div key={idx} className="flex gap-4 items-start p-4 rounded-lg" style={{ backgroundColor: idx % 2 === 0 ? brandPalette.soft : "#f9fafb" }}>
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: brandPalette.primary }}>
-                    {idx + 1}
-                  </div>
-                  <p className="text-gray-700 leading-relaxed">{tip}</p>
-                </div>
-              ))}
-            </div>
-
-            {seasonalAdvice && (
-              <div className="mt-6 p-4 rounded-lg border-l-4" style={{ borderColor: brandPalette.accent, backgroundColor: brandPalette.soft }}>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">⏰ Best Time to {isTravel ? "Book" : "Buy"}</h3>
-                <p className="text-gray-700 text-sm leading-relaxed">{seasonalAdvice}</p>
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* ═══ HIGH-INTENT SECTION: Getting Started Guide ═══ */}
-        {gettingStartedSteps.length > 0 && (
-          <section className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
-            <h2 className="text-2xl font-bold mb-2" style={{ color: brandPalette.secondary }}>
-              How to Use {brandName}: Step-by-Step Guide
-            </h2>
-            <p className="text-gray-600 mb-6">{spin.guideIntroParagraph()}</p>
-
-            <div className="relative">
-              {/* Vertical connector line */}
-              <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-gray-200" style={{ marginLeft: "15px" }} />
-              <div className="space-y-6">
-                {gettingStartedSteps.map((step, idx) => (
-                  <div key={idx} className="flex gap-4 items-start relative">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold z-10" style={{ backgroundColor: brandPalette.primary }}>
-                      {idx + 1}
-                    </div>
-                    <div className="pt-1">
-                      <p className="text-gray-700 leading-relaxed">{step}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-6 text-center">
-              <PopunderButton
-                href={clickHref}
-                popunderUrl={popunderUrl}
-                className="px-6 py-3 text-white font-semibold rounded-lg transition inline-block"
-                style={{ backgroundColor: brandPalette.primary }}
-              >
-                Get Started with {brandName} →
-              </PopunderButton>
-            </div>
-          </section>
-        )}
-
-        {/* ═══ HIGH-INTENT SECTION: Alternatives Comparison Table ═══ */}
-        {alternativesComparison.length > 0 && (
-          <section className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
-            <h2 className="text-2xl font-bold mb-2" style={{ color: brandPalette.secondary }}>
-              {brandName} vs. Competitors: Honest Comparison
-            </h2>
-            <p className="text-gray-600 mb-6">{spin.alternativesIntroParagraph()}</p>
-
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="border-b-2" style={{ borderColor: brandPalette.primary }}>
-                    <th className="text-left p-3 font-semibold text-gray-900">{isTravel ? "Platform" : "Service"}</th>
-                    <th className="text-left p-3 font-semibold text-green-700">Where They Win</th>
-                    <th className="text-left p-3 font-semibold" style={{ color: brandPalette.primary }}>Where {brandName} Wins</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {alternativesComparison.map((alt, idx) => (
-                    <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
-                      <td className="p-3 font-semibold text-gray-900">{alt.name}</td>
-                      <td className="p-3 text-gray-700">{alt.advantage}</td>
-                      <td className="p-3 text-gray-700">{alt.disadvantage}</td>
-                    </tr>
-                  ))}
-                  <tr className="border-t-2" style={{ borderColor: brandPalette.primary, backgroundColor: brandPalette.soft }}>
-                    <td className="p-3 font-bold" style={{ color: brandPalette.primary }}>{brandName}</td>
-                    <td className="p-3 text-gray-700" colSpan={2}>
-                      {spin.hedge(4)} {brandName} offers the best balance of {isTravel ? "search coverage, price alerts, and booking flexibility" : "features, pricing, and user experience"} for {bestFor.toLowerCase()}.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <p className="text-xs text-gray-500 italic mt-4">
-              Comparison based on publicly available information at time of review. Features and pricing may have changed. Always verify directly with each provider.
-            </p>
-          </section>
-        )}
 
         {/* Features & Services — expanded with descriptions */}
         {features.length > 0 && (
-          <section className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
+          <section id="features" className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
             <h2 className="text-2xl font-bold mb-2" style={{ color: brandPalette.secondary }}>
               What Services and Features Does {brandName} Offer?
             </h2>
@@ -758,44 +815,9 @@ export default async function OfferPage({ params }: OfferPageProps) {
         )}
 
 
-        {/* ═══ HIGH-INTENT: Smart Buyer's Checklist ═══ */}
-        <section className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
-          <h2 className="text-2xl font-bold mb-4" style={{ color: brandPalette.secondary }}>
-            {isTravel ? "Traveler's" : "Buyer's"} Checklist: Before You {isTravel ? "Book" : "Buy"}
-          </h2>
-          <p className="text-gray-600 mb-4">
-            {spin.hedge(5)} we recommend running through this quick checklist before committing to {isTravel ? "a booking through" : "a purchase with"} {brandName}. These steps can save you time, money, and potential headaches.
-          </p>
-          <div className="grid md:grid-cols-2 gap-3">
-            {(isTravel ? [
-              { label: "Compare prices across at least 2-3 platforms", detail: "Don't rely on a single source — cross-reference with Google Flights and direct airline sites." },
-              { label: "Check flexible date options", detail: `${brandName} often shows cheaper fares if you shift your travel dates by a day or two.` },
-              { label: "Read the booking terms carefully", detail: "Some fares are non-refundable or have change fees. Check before you click 'Book'." },
-              { label: "Set up price alerts for your route", detail: `If your dates are flexible, use ${brandName}'s alert feature to wait for the best price.` },
-              { label: "Verify the final price on the airline's website", detail: "Aggregator prices can occasionally differ from the actual booking price." },
-              { label: "Check baggage and seat selection costs", detail: "The cheapest fare might not include luggage — factor in the total cost." },
-            ] : [
-              { label: "Identify which features you actually need", detail: `Not every plan includes every feature. Match your needs to ${brandName}'s tier that fits best.` },
-              { label: "Check for a free trial or money-back guarantee", detail: `Test ${brandName} before committing to a long-term plan.` },
-              { label: "Compare at least 2-3 alternatives", detail: "See our comparison table above to weigh your options." },
-              { label: "Read the cancellation and refund policy", detail: "Understand what happens if you change your mind after purchasing." },
-              { label: "Look for seasonal promotions or bundle deals", detail: `${brandName} may offer discounts during major sales events.` },
-              { label: "Verify current pricing on the official website", detail: "Prices shown in reviews may not reflect the latest offers." },
-            ]).map((item, idx) => (
-              <div key={idx} className="flex gap-3 items-start p-3 rounded-lg bg-gray-50">
-                <div className="flex-shrink-0 w-5 h-5 rounded border-2 mt-0.5" style={{ borderColor: brandPalette.primary }} />
-                <div>
-                  <div className="font-semibold text-sm text-gray-900">{item.label}</div>
-                  <div className="text-xs text-gray-600 mt-0.5">{item.detail}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
         {/* FAQ */}
         {faqs.length > 0 && (
-          <section className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <section id="faq" className="bg-white rounded-lg shadow-sm p-6 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
             
             <div className="space-y-4">
