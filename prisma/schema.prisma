@@ -23,6 +23,7 @@ model User {
 model Campaign {
   id                    String   @id @default(cuid())
   offerName             String
+  brandName             String   @default("")
   description           String
   status                String   @default("draft")
   researchUrls          String[]

@@ -11,6 +11,7 @@ export function NewCampaignForm() {
 
   const [form, setForm] = useState({
     offerName: "",
+    brandName: "",
     description: "",
     destinationUrl: "",
     researchUrls: "",
@@ -48,6 +49,7 @@ export function NewCampaignForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           offerName: form.offerName.trim(),
+          brandName: form.brandName.trim() || form.offerName.trim(),
           description: form.description.trim(),
           destinationUrl: form.destinationUrl.trim(),
           researchUrls: form.researchUrls
@@ -116,6 +118,20 @@ export function NewCampaignForm() {
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition bg-white text-gray-900 placeholder-gray-400"
             placeholder="e.g. NordVPN Holiday Sale"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Brand Name
+          </label>
+          <input
+            type="text"
+            value={form.brandName}
+            onChange={(e) => updateField("brandName", e.target.value)}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition bg-white text-gray-900 placeholder-gray-400"
+            placeholder="e.g. NordVPN (displayed on the lander)"
+          />
+          <p className="text-xs text-gray-500 mt-1">The name shown on the preview lander. Defaults to Campaign Name if empty.</p>
         </div>
 
         <div>

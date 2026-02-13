@@ -23,6 +23,7 @@ export function CampaignEditForm({ campaign }: CampaignEditFormProps) {
     campaign.autoRedirectDelay,
   );
   const [status, setStatus] = useState(campaign.status);
+  const [brandName, setBrandName] = useState(campaign.brandName || "");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +36,7 @@ export function CampaignEditForm({ campaign }: CampaignEditFormProps) {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          brandName: brandName.trim(),
           autoTriggerOnInaction,
           autoTriggerDelay: parseInt(autoTriggerDelay.toString()),
           autoRedirectDelay: parseInt(autoRedirectDelay.toString()),
@@ -68,6 +70,18 @@ export function CampaignEditForm({ campaign }: CampaignEditFormProps) {
             <div className="bg-gray-100 px-4 py-3 rounded-lg border border-gray-200 text-gray-900 font-medium">
               {campaign.offerName}
             </div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Brand Name (displayed on lander)
+            </label>
+            <input
+              type="text"
+              value={brandName}
+              onChange={(e) => setBrandName(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-medium"
+              placeholder={campaign.offerName}
+            />
           </div>
           {campaign.subdomain && (
             <div>

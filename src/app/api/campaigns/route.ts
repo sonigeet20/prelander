@@ -27,6 +27,7 @@ export async function POST(request: Request) {
     const campaign = await prisma.campaign.create({
       data: {
         offerName: body.offerName.trim(),
+        brandName: body.brandName?.trim() || body.offerName.trim(),
         description: body.description?.trim() || "",
         destinationUrl: body.destinationUrl?.trim() || "",
         researchUrls: body.researchUrls || [],

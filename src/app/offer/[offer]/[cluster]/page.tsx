@@ -56,7 +56,9 @@ export async function generateMetadata({ params }: OfferPageProps) {
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(" ")
       .trim();
-  const brandName = normalizeBrandName(factPack?.brandName || campaign.offerName);
+  const brandName = (campaign as any).brandName && (campaign as any).brandName.trim()
+    ? (campaign as any).brandName.trim()
+    : normalizeBrandName(factPack?.brandName || campaign.offerName);
   const clusterTitle = cluster.replace(/-/g, " ");
   const isTravel = (factPack?.category || "").toLowerCase().includes("travel");
   const title = isTravel
