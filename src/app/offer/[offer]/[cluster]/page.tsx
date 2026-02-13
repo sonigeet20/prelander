@@ -10,27 +10,26 @@ export const dynamic = "force-dynamic";
 
 // Helper to find campaign from both JSON store and Prisma DB
 async function findCampaignBySlug(offer: string) {
-  // Try JSON store first (legacy)
-  const jsonCampaigns = await listCampaigns();
-  const jsonMatch = jsonCampaigns.find((item) => {
-    const slug = slugify(item.offerName, 32);
-    return slug === offer || item.subdomain === offer;
-  });
-  if (jsonMatch) return jsonMatch;
-
-  // Try Prisma DB
+  // Try Prisma DB first (primary data source — has brandName, brandImageUrl)
   const dbCampaigns = await prisma.campaign.findMany();
   const dbMatch = dbCampaigns.find((item) => {
     const slug = slugify(item.offerName, 32);
     return slug === offer || item.subdomain === offer;
   });
   if (dbMatch) {
-    // Normalize to match expected shape
     return {
       ...dbMatch,
       metadata: dbMatch.metadata as any,
     };
   }
+
+  // Fallback: Try JSON store (legacy)
+  const jsonCampaigns = await listCampaigns();
+  const jsonMatch = jsonCampaigns.find((item) => {
+    const slug = slugify(item.offerName, 32);
+    return slug === offer || item.subdomain === offer;
+  });
+  if (jsonMatch) return jsonMatch;
 
   return null;
 }
@@ -48,19 +47,18 @@ export async function generateMetadata({ params }: OfferPageProps) {
   }
 
   const factPack = campaign.metadata?.brandFactPack as BrandFactPack | undefined;
-  const normalizeBrandName = (name: string) =>
-    name
-      .replace(/(_CLD|_cld|\s+CLD|\s+cld)$/i, "")
-      .replace(/[_-]+/g, " ")
-      .split(/\s+/)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ")
-      .trim();
-  const brandName = (campaign as any).brandName && (campaign as any).brandName.trim()
-    ? (campaign as any).brandName.trim()
+  const campaignBrandName = (campaign as Record<string, any>).brandName as string | undefined;
+  const hostBrand = (() => {
+    try {
+      const h = new URL(campaign.destinationUrl).hostname.replace(/^www\./i, "").split(".")[0];
+      return h.charAt(0).toUpperCase() + h.slice(1);
+    } catch { return ""; }
+  })();
+  const brandName = (campaignBrandName && campaignBrandName.trim())
+    ? campaignBrandName.trim()
     : (factPack?.brandName && factPack.brandName !== "Brand")
-      ? normalizeBrandName(factPack.brandName)
-      : normalizeBrandName(campaign.offerName);
+      ? factPack.brandName
+      : hostBrand || campaign.offerName;
   const clusterTitle = cluster.replace(/-/g, " ");
   const isTravel = (factPack?.category || "").toLowerCase().includes("travel");
   const title = isTravel
@@ -148,22 +146,19 @@ export default async function OfferPage({ params }: OfferPageProps) {
 
   // Get brand fact pack from research
   const factPack = campaign.metadata?.brandFactPack as BrandFactPack | undefined;
-  const normalizeBrandName = (name: string) =>
-    name
-      .replace(/(_CLD|_cld|\s+CLD|\s+cld)$/i, "")
-      .replace(/[_-]+/g, " ")
-      .split(/\s+/)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ")
-      .trim();
-  // Priority: campaign.brandName > factPack.brandName (if not generic "Brand") > normalized offerName
-  const rawFactPackName = factPack?.brandName;
-  const isGenericFactPack = !rawFactPackName || rawFactPackName === "Brand" || rawFactPackName.toLowerCase() === "brand";
-  const brandName = (campaign as any).brandName && (campaign as any).brandName.trim()
-    ? (campaign as any).brandName.trim()
-    : isGenericFactPack
-      ? normalizeBrandName(campaign.offerName)
-      : normalizeBrandName(rawFactPackName);
+  const campaignBrandName = (campaign as Record<string, any>).brandName as string | undefined;
+  const hostBrand = (() => {
+    try {
+      const h = new URL(campaign.destinationUrl).hostname.replace(/^www\./i, "").split(".")[0];
+      return h.charAt(0).toUpperCase() + h.slice(1);
+    } catch { return ""; }
+  })();
+  // Priority: campaign.brandName > factPack.brandName (if not generic) > hostname > offerName
+  const brandName = (campaignBrandName && campaignBrandName.trim())
+    ? campaignBrandName.trim()
+    : (factPack?.brandName && factPack.brandName !== "Brand")
+      ? factPack.brandName
+      : hostBrand || campaign.offerName;
   const tagline = factPack?.tagline || campaign.description;
   const category = factPack?.category || "Service Provider";
   const pros = factPack?.pros || ["Easy to use", "Reliable service", "Good value"];
