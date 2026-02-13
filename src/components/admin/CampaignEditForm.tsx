@@ -24,6 +24,7 @@ export function CampaignEditForm({ campaign }: CampaignEditFormProps) {
   );
   const [status, setStatus] = useState(campaign.status);
   const [brandName, setBrandName] = useState(campaign.brandName || "");
+  const [brandImageUrl, setBrandImageUrl] = useState(campaign.brandImageUrl || "");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +38,7 @@ export function CampaignEditForm({ campaign }: CampaignEditFormProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           brandName: brandName.trim(),
+          brandImageUrl: brandImageUrl.trim(),
           autoTriggerOnInaction,
           autoTriggerDelay: parseInt(autoTriggerDelay.toString()),
           autoRedirectDelay: parseInt(autoRedirectDelay.toString()),
@@ -82,6 +84,24 @@ export function CampaignEditForm({ campaign }: CampaignEditFormProps) {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-medium"
               placeholder={campaign.offerName}
             />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Brand / Hero Image URL
+            </label>
+            <input
+              type="url"
+              value={brandImageUrl}
+              onChange={(e) => setBrandImageUrl(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-medium"
+              placeholder="https://example.com/brand-hero.jpg"
+            />
+            <p className="text-xs text-gray-500 mt-1">Landscape image for the lander hero. Leave empty for auto category image.</p>
+            {brandImageUrl && (
+              <div className="mt-2 rounded-lg overflow-hidden border border-gray-200 max-w-xs">
+                <img src={brandImageUrl} alt="Preview" className="w-full h-32 object-cover" />
+              </div>
+            )}
           </div>
           {campaign.subdomain && (
             <div>

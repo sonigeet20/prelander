@@ -28,6 +28,7 @@ export async function POST(request: Request) {
       data: {
         offerName: body.offerName.trim(),
         brandName: body.brandName?.trim() || body.offerName.trim(),
+        brandImageUrl: body.brandImageUrl?.trim() || "",
         description: body.description?.trim() || "",
         destinationUrl: body.destinationUrl?.trim() || "",
         researchUrls: body.researchUrls || [],

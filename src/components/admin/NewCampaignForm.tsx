@@ -12,6 +12,7 @@ export function NewCampaignForm() {
   const [form, setForm] = useState({
     offerName: "",
     brandName: "",
+    brandImageUrl: "",
     description: "",
     destinationUrl: "",
     researchUrls: "",
@@ -50,6 +51,7 @@ export function NewCampaignForm() {
         body: JSON.stringify({
           offerName: form.offerName.trim(),
           brandName: form.brandName.trim() || form.offerName.trim(),
+          brandImageUrl: form.brandImageUrl.trim(),
           description: form.description.trim(),
           destinationUrl: form.destinationUrl.trim(),
           researchUrls: form.researchUrls
@@ -132,6 +134,20 @@ export function NewCampaignForm() {
             placeholder="e.g. NordVPN (displayed on the lander)"
           />
           <p className="text-xs text-gray-500 mt-1">The name shown on the preview lander. Defaults to Campaign Name if empty.</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Brand / Hero Image URL
+          </label>
+          <input
+            type="url"
+            value={form.brandImageUrl}
+            onChange={(e) => updateField("brandImageUrl", e.target.value)}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition bg-white text-gray-900 placeholder-gray-400"
+            placeholder="https://example.com/brand-hero.jpg"
+          />
+          <p className="text-xs text-gray-500 mt-1">Image shown on the lander hero section. Use a high-quality landscape image (min 900px wide).</p>
         </div>
 
         <div>
