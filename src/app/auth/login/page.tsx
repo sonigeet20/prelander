@@ -146,26 +146,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          {/* Divider */}
-          <div className="mt-8 border-t border-gray-200 pt-8">
-            <p className="text-xs text-gray-600 text-center mb-4 font-medium">Demo Credentials</p>
-            <div className="bg-indigo-50 rounded-lg p-4 space-y-2 text-xs">
-              <div className="font-mono">
-                <div className="text-gray-700">
-                  <span className="text-gray-500">Email:</span>{" "}
-                  <span className="text-indigo-600 font-semibold">admin@prelander.ai</span>
-                </div>
-                <div className="text-gray-700 mt-1">
-                  <span className="text-gray-500">Password:</span>{" "}
-                  <span className="text-indigo-600 font-semibold">ChangeMe123!</span>
-                </div>
-              </div>
-            </div>
-            <p className="text-xs text-gray-500 text-center mt-3">
-              🔐 Change password after first login
-            </p>
-          </div>
         </div>
 
         {/* Footer Info */}
