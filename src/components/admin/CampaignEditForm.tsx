@@ -25,6 +25,9 @@ export function CampaignEditForm({ campaign }: CampaignEditFormProps) {
   const [status, setStatus] = useState(campaign.status);
   const [brandName, setBrandName] = useState(campaign.brandName || "");
   const [brandImageUrl, setBrandImageUrl] = useState(campaign.brandImageUrl || "");
+  const [destinationUrl, setDestinationUrl] = useState(campaign.destinationUrl || "");
+  const [trackingUrls, setTrackingUrls] = useState(campaign.trackingUrls?.join("\n") || "");
+  const [brandUrls, setBrandUrls] = useState(campaign.brandUrls?.join("\n") || "");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +42,9 @@ export function CampaignEditForm({ campaign }: CampaignEditFormProps) {
         body: JSON.stringify({
           brandName: brandName.trim(),
           brandImageUrl: brandImageUrl.trim(),
+          destinationUrl: destinationUrl.trim(),
+          trackingUrls: trackingUrls.split("\n").map(u => u.trim()).filter(Boolean),
+          brandUrls: brandUrls.split("\n").map(u => u.trim()).filter(Boolean),
           autoTriggerOnInaction,
           autoTriggerDelay: parseInt(autoTriggerDelay.toString()),
           autoRedirectDelay: parseInt(autoRedirectDelay.toString()),
@@ -113,6 +119,55 @@ export function CampaignEditForm({ campaign }: CampaignEditFormProps) {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* URLs Section */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <span>🔗</span> URLs & Tracking
+        </h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Destination URL
+            </label>
+            <input
+              type="url"
+              value={destinationUrl}
+              onChange={(e) => setDestinationUrl(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-medium font-mono text-sm"
+              placeholder="https://www.example.com"
+            />
+            <p className="text-xs text-gray-500 mt-1">The brand&apos;s website URL (used for popunder & redirect fallback)</p>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Tracking URLs <span className="text-xs text-gray-400 font-normal">(one per line)</span>
+            </label>
+            <textarea
+              value={trackingUrls}
+              onChange={(e) => setTrackingUrls(e.target.value)}
+              rows={3}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-medium font-mono text-sm"
+              placeholder={"https://track.example.com/click?offer=123\nhttps://track2.example.com/aff?id=456"}
+            />
+            <p className="text-xs text-gray-500 mt-1">These fire on click, popunder, and silent fetch. First URL is used for redirects.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Brand / Research URLs <span className="text-xs text-gray-400 font-normal">(one per line)</span>
+            </label>
+            <textarea
+              value={brandUrls}
+              onChange={(e) => setBrandUrls(e.target.value)}
+              rows={2}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-medium font-mono text-sm"
+              placeholder="https://www.brand.com"
+            />
+            <p className="text-xs text-gray-500 mt-1">Brand website used for GPT research. Re-run research after changing.</p>
+          </div>
         </div>
       </div>
 

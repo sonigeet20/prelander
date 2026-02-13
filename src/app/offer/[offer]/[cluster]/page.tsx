@@ -391,7 +391,7 @@ export default async function OfferPage({ params }: OfferPageProps) {
                 </div>
               </div>
             </div>
-            <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
+            <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm aspect-[16/10]">
               <img
                 src={(() => {
                   // Priority: campaign.brandImageUrl > factPack.heroImageUrl > category-specific stock

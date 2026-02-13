@@ -103,7 +103,7 @@ CRITICAL RULES:
 8. "faqItems" should contain 3–5 questions a real user would ask about ${ctx.brandName}, with helpful answers.
 9. "tagline" should be the brand's actual tagline or a short value proposition (max 150 chars).
 10. "bestFor" should describe the ideal user of ${ctx.brandName} in one sentence.
-11. "heroImageUrl" must be a real, publicly accessible image URL that visually represents ${ctx.brandName} or its category. Use a high-quality Unsplash URL in the format https://images.unsplash.com/photo-XXXXX?auto=format&fit=crop&w=900&q=80 that matches the brand's industry (e.g. airplane for travel, shield for security, laptop for software). Pick a real Unsplash photo ID you know exists.
+11. "heroImageUrl" must be a real, publicly accessible landscape-oriented image URL that visually represents ${ctx.brandName} or its category. Use a high-quality Unsplash URL in the format https://images.unsplash.com/photo-XXXXX?auto=format&fit=crop&w=1200&h=750&q=80 that matches the brand's industry (e.g. airplane for travel, shield for security, laptop for software). Pick a real Unsplash photo ID you know exists. Must be landscape/wide, never portrait.
 12. Return ONLY valid JSON — no markdown fences, no extra text.`;
 
   const userPrompt = `Research the brand "${ctx.brandName}" (website: ${ctx.brandUrl}).
