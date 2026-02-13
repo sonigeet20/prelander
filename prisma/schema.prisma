@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  password  String
+  name      String?
+  role      String     @default("admin")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Campaign {
+  id                    String   @id @default(cuid())
+  offerName             String
+  description           String
+  status                String   @default("draft")
+  researchUrls          String[]
+  brandUrls             String[]
+  destinationUrl        String
+  trackingUrls          String[]
+  geos                  String[]
+  languages             String[]
+  popunderEnabled       Boolean  @default(false)
+  silentFetchEnabled    Boolean  @default(false)
+  autoTriggerDelay      Int      @default(3000)
+  autoRedirectDelay     Int      @default(0)
+  autoTriggerOnInaction Boolean  @default(false)
+  subdomain             String?  @unique
+  metadata              Json?
+  lastResearchedAt      DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  clickSessions         ClickSession[]
+  conversions           Conversion[]
+}
+
+model ClickSession {
+  id          String   @id @default(cuid())
+  campaignId  String
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  clusterId   String   @default("default")
+  ip          String
+  userAgent   String
+  referrer    String?
+  gclid       String?
+  gbraid      String?
+  wbraid      String?
+  createdAt   DateTime @default(now())
+}
+
+model Conversion {
+  id          String   @id @default(cuid())
+  campaignId  String
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  clusterId   String   @default("default")
+  ip          String?
+  userAgent   String?
+  revenue     Float?
+  currency    String   @default("USD")
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Lander {
+  id         String   @id @default(cuid())
+  campaignId String
+  title      String
+  body       String
+  cta        String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

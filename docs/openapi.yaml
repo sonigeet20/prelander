@@ -1,0 +1,87 @@
+openapi: 3.0.3
+info:
+  title: Prelander API
+  version: 0.1.0
+paths:
+  /api/campaigns:
+    get:
+      summary: List offers
+      responses:
+        "200":
+          description: OK
+    post:
+      summary: Create offer
+      responses:
+        "201":
+          description: Created
+  /api/campaigns/{id}:
+    get:
+      summary: Get offer
+      responses:
+        "200":
+          description: OK
+    patch:
+      summary: Update offer
+      responses:
+        "200":
+          description: OK
+  /api/research:
+    post:
+      summary: Queue research job
+      responses:
+        "201":
+          description: Created
+  /api/ai/draft:
+    post:
+      summary: Generate draft lander copy
+      responses:
+        "200":
+          description: OK
+  /api/landers:
+    post:
+      summary: Create lander
+      responses:
+        "201":
+          description: Created
+  /api/landers/{id}:
+    get:
+      summary: Get lander
+      responses:
+        "200":
+          description: OK
+  /api/subdomains/provision:
+    post:
+      summary: Provision subdomain
+      responses:
+        "201":
+          description: Created
+  /api/track:
+    post:
+      summary: Record tracking event
+      responses:
+        "200":
+          description: OK
+  /click/{offer}/{cluster}:
+    get:
+      summary: Log click and redirect
+      responses:
+        "302":
+          description: Redirect
+  /api/conversions:
+    post:
+      summary: Record conversion (OCI placeholder)
+      responses:
+        "201":
+          description: Created
+  /api/google-ads/connect:
+    post:
+      summary: Connect Google Ads account (placeholder)
+      responses:
+        "200":
+          description: OK
+  /api/google-ads/campaigns:
+    post:
+      summary: Provision campaigns (placeholder)
+      responses:
+        "201":
+          description: Created
