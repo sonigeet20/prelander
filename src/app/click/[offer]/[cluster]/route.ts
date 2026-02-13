@@ -71,7 +71,7 @@ export async function GET(
     );
   }
 
-  const destination = match.destinationUrl || match.trackingUrls[0];
+  const destination = match.trackingUrls[0] || match.destinationUrl;
   if (!destination) {
     return NextResponse.json(
       { error: "destination_not_configured" },
