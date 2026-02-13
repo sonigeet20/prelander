@@ -60,7 +60,8 @@ export async function generateMetadata({ params }: OfferPageProps) {
       ? factPack.brandName
       : hostBrand || campaign.offerName;
   const clusterTitle = cluster.replace(/-/g, " ");
-  const isTravel = (factPack?.category || "").toLowerCase().includes("travel");
+  const travelKeywords = ["travel", "tourism", "flight", "airline", "hotel", "booking", "trip", "vacation", "hostel"];
+  const isTravel = travelKeywords.some(k => (factPack?.category || "").toLowerCase().includes(k));
   const title = isTravel
     ? `${brandName} Cheap Flights & Airline Tickets Review (2026) - ${clusterTitle}`
     : `${brandName} Review (2026) - ${clusterTitle}`;
@@ -170,7 +171,9 @@ export default async function OfferPage({ params }: OfferPageProps) {
   const faqs = factPack?.faqItems || [];
   const testimonials = factPack?.testimonials || [];
   const pricingInfo = factPack?.pricingInfo;
-  const keywordPhrases = category.toLowerCase().includes("travel")
+  const travelKw = ['travel','tourism','flight','airline','hotel','booking','trip','vacation','hostel'];
+  const isTravel = travelKw.some(k => category.toLowerCase().includes(k));
+  const keywordPhrases = isTravel
     ? [
         `${brandName} flights`,
         `${brandName} cheap flights`,
@@ -341,13 +344,13 @@ export default async function OfferPage({ params }: OfferPageProps) {
             </span>
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            {category.toLowerCase().includes("travel")
+            {isTravel
               ? `${brandName} Cheap Flights & Airline Tickets Review (2026)`
               : `${brandName} Review (2026)`}
           </h1>
           <p className="text-xl text-gray-600 mb-6">
             {tagline}
-            {category.toLowerCase().includes("travel") && (
+            {isTravel && (
               <> Compare {brandName} flight search, airline ticket deals, and travel booking options.</>
             )}
           </p>
@@ -395,7 +398,7 @@ export default async function OfferPage({ params }: OfferPageProps) {
                   if ((campaign as any).brandImageUrl && (campaign as any).brandImageUrl.trim())
                     return (campaign as any).brandImageUrl.trim();
                   const cat = category.toLowerCase();
-                  if (cat.includes('travel') || cat.includes('tourism'))
+                  if (['travel','tourism','flight','airline','hotel','booking','trip','vacation','hostel'].some(k => cat.includes(k)))
                     return 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=900&q=80';
                   if (cat.includes('security') || cat.includes('cyber') || cat.includes('antivirus'))
                     return 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=900&q=80';
@@ -474,7 +477,7 @@ export default async function OfferPage({ params }: OfferPageProps) {
 
         {/* In a Nutshell */}
         <section className="bg-gradient-to-br from-white rounded-lg shadow-sm p-6 mb-8" style={{ backgroundColor: brandPalette.soft, borderColor: brandPalette.accent, borderWidth: 1 }}>
-          <h2 className="text-2xl font-bold mb-4" style={{ color: brandPalette.secondary }}>In a Nutshell: {brandName} {category.toLowerCase().includes('travel') ? 'Flight Search' : ''}</h2>
+          <h2 className="text-2xl font-bold mb-4" style={{ color: brandPalette.secondary }}>In a Nutshell: {brandName} {isTravel ? 'Flight Search' : ''}</h2>
           <p className="text-gray-700 leading-relaxed">
             {tagline} {benefits[0] && `With ${benefits[0].toLowerCase()}, `}
             {brandName} is a strong option for {bestFor.toLowerCase()}. We took a closer look at 
@@ -514,7 +517,7 @@ export default async function OfferPage({ params }: OfferPageProps) {
         {/* Highlights */}
         <section className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
           <h2 className="text-2xl font-bold mb-4" style={{ color: brandPalette.secondary }}>
-            Why Choose {brandName} for {category.toLowerCase().includes("travel") ? "Cheap Flights" : category}
+            Why Choose {brandName} for {isTravel ? "Cheap Flights" : category}
           </h2>
           <ul className="grid md:grid-cols-2 gap-4 text-gray-700">
             {brandedHighlights.slice(0, 6).map((item, index) => (
@@ -541,7 +544,7 @@ export default async function OfferPage({ params }: OfferPageProps) {
 
         {/* Pros & Cons */}
         <section className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">{brandName} Pros & Cons{category.toLowerCase().includes('travel') ? ' for Cheap Flights' : ''}</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">{brandName} Pros & Cons{isTravel ? ' for Cheap Flights' : ''}</h2>
           
           <div className="grid md:grid-cols-2 gap-8">
             {/* Pros */}
