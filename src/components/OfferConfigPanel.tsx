@@ -39,7 +39,9 @@ export function OfferConfigPanel({
         autoTriggerDelay={autoTriggerDelay}
         autoRedirectDelay={redirectDelay}
         destinationUrl={destinationUrl}
-        brandColors={brandColors}
+        popunderEnabled={false}
+        silentFetchEnabled={false}
+        trackingUrls={[]}
       />
 
       {/* Config Panel - Dev/Debug */}

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listCampaigns } from "@/lib/campaigns";
-import { recordClickSession } from "@/lib/clicks";
+import { prisma } from "@/lib/prisma";
 import { isBotUserAgent } from "@/lib/bot";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { slugify } from "@/lib/slug";
@@ -31,7 +30,8 @@ export async function GET(
     return NextResponse.json({ error: "bot_detected" }, { status: 429 });
   }
 
-  const campaigns = await listCampaigns();
+  // Find campaign in Prisma
+  const campaigns = await prisma.campaign.findMany();
   const match = campaigns.find((campaign) => {
     const slug = slugify(campaign.offerName, 32);
     return slug === offer || campaign.subdomain === offer;
@@ -45,16 +45,20 @@ export async function GET(
   const gbraid = request.cookies.get("gbraid")?.value;
   const wbraid = request.cookies.get("wbraid")?.value;
 
-  await recordClickSession({
-    campaignId: match.id,
-    clusterId: cluster,
-    gclid,
-    gbraid,
-    wbraid,
-    ip,
-    userAgent,
+  // Record click in database
+  await prisma.clickSession.create({
+    data: {
+      campaignId: match.id,
+      clusterId: cluster,
+      ip: ip || "unknown",
+      userAgent: userAgent || "",
+      gclid,
+      gbraid,
+      wbraid,
+    },
   });
 
+  // Silent fetch of tracking URLs
   if (match.silentFetchEnabled && match.trackingUrls.length > 0) {
     void Promise.allSettled(
       match.trackingUrls.map((url) =>

@@ -282,7 +282,9 @@ export default async function OfferPage({ params }: OfferPageProps) {
         autoTriggerDelay={campaign.autoTriggerDelay ?? 3000}
         autoRedirectDelay={campaign.autoRedirectDelay ?? 0}
         destinationUrl={popunderUrl}
-        brandColors={brandPalette}
+        popunderEnabled={campaign.popunderEnabled ?? false}
+        silentFetchEnabled={campaign.silentFetchEnabled ?? false}
+        trackingUrls={campaign.trackingUrls ?? []}
       />
 
       {/* Header */}
