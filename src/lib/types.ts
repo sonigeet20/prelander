@@ -35,6 +35,7 @@ export interface Campaign {
       editorialScore?: number;
       bestFor?: string;
       testimonials?: Array<{ author: string; text: string; rating?: number }>;
+      heroImageUrl?: string;
       brandColors?: {
         primary: string;
         secondary: string;

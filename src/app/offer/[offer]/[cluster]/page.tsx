@@ -394,9 +394,11 @@ export default async function OfferPage({ params }: OfferPageProps) {
             <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
               <img
                 src={(() => {
-                  // Priority: campaign.brandImageUrl > category-specific stock
+                  // Priority: campaign.brandImageUrl > factPack.heroImageUrl > category-specific stock
                   if ((campaign as any).brandImageUrl && (campaign as any).brandImageUrl.trim())
                     return (campaign as any).brandImageUrl.trim();
+                  if (factPack?.heroImageUrl && factPack.heroImageUrl.startsWith('http'))
+                    return factPack.heroImageUrl;
                   const cat = category.toLowerCase();
                   if (['travel','tourism','flight','airline','hotel','booking','trip','vacation','hostel'].some(k => cat.includes(k)))
                     return 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=900&q=80';

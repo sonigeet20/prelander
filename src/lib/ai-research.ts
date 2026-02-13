@@ -18,6 +18,7 @@ export interface BrandFactPack {
   editorialScore?: number;
   bestFor?: string;
   testimonials?: Array<{ author: string; text: string; rating?: number }>;
+  heroImageUrl?: string;
   brandColors?: {
     primary: string;
     secondary: string;
@@ -102,7 +103,8 @@ CRITICAL RULES:
 8. "faqItems" should contain 3–5 questions a real user would ask about ${ctx.brandName}, with helpful answers.
 9. "tagline" should be the brand's actual tagline or a short value proposition (max 150 chars).
 10. "bestFor" should describe the ideal user of ${ctx.brandName} in one sentence.
-11. Return ONLY valid JSON — no markdown fences, no extra text.`;
+11. "heroImageUrl" must be a real, publicly accessible image URL that visually represents ${ctx.brandName} or its category. Use a high-quality Unsplash URL in the format https://images.unsplash.com/photo-XXXXX?auto=format&fit=crop&w=900&q=80 that matches the brand's industry (e.g. airplane for travel, shield for security, laptop for software). Pick a real Unsplash photo ID you know exists.
+12. Return ONLY valid JSON — no markdown fences, no extra text.`;
 
   const userPrompt = `Research the brand "${ctx.brandName}" (website: ${ctx.brandUrl}).
 
@@ -131,7 +133,8 @@ Return this exact JSON structure with ALL fields filled in specifically for ${ct
     {"author": "Persona", "text": "Review of ${ctx.brandName}", "rating": 4},
     {"author": "Persona", "text": "Review of ${ctx.brandName}", "rating": 5},
     {"author": "Persona", "text": "Review of ${ctx.brandName}", "rating": 3}
-  ]
+  ],
+  "heroImageUrl": "https://images.unsplash.com/photo-XXXXX?auto=format&fit=crop&w=900&q=80"
 }`;
 
   try {
