@@ -20,6 +20,7 @@ export function CampaignActions({ campaign }: CampaignActionsProps) {
 
   const slug = slugify(campaign.offerName, 32);
   const previewUrl = `/offer/${slug}/default`;
+  const dealsUrl = `/deals/${slug}`;
   const hasFactPack = !!campaign.metadata?.brandFactPack;
   const hasBrandUrls = campaign.brandUrls && campaign.brandUrls.length > 0;
 
@@ -65,6 +66,17 @@ export function CampaignActions({ campaign }: CampaignActionsProps) {
         >
           <span>👁️</span>
           Preview Lander
+        </a>
+
+        {/* Preview Deals Page */}
+        <a
+          href={dealsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-indigo-200 text-indigo-700 font-medium text-sm hover:bg-indigo-100 transition"
+        >
+          <span>🏷️</span>
+          Preview Deals
         </a>
 
         {/* Copy Lander URL */}

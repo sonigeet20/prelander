@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AdminLayout } from "@/components/AdminLayout";
 import { CampaignEditForm } from "@/components/admin/CampaignEditForm";
 import { CampaignActions } from "@/components/admin/CampaignActions";
+import { CampaignDealsManager } from "@/components/admin/CampaignDealsManager";
 import { slugify } from "@/lib/slug";
 
 export const dynamic = "force-dynamic";
@@ -68,6 +69,9 @@ export default async function CampaignEditPage({ params }: PageProps) {
           <CampaignActions campaign={campaign} />
           
           <CampaignEditForm campaign={campaign} />
+
+          {/* Deals Manager */}
+          <CampaignDealsManager campaignId={campaign.id} offerName={campaign.offerName} />
         </div>
       </div>
     </AdminLayout>

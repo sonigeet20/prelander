@@ -46,6 +46,7 @@ model Campaign {
   
   clickSessions         ClickSession[]
   conversions           Conversion[]
+  deals                 Deal[]
 }
 
 model ClickSession {
@@ -84,4 +85,24 @@ model Lander {
   cta        String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model Deal {
+  id              String    @id @default(cuid())
+  campaignId      String
+  campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  title           String
+  description     String
+  code            String?
+  discountLabel   String    @default("")
+  discountPercent Float?
+  category        String    @default("General")
+  destinationUrl  String    @default("")
+  verified        Boolean   @default(true)
+  featured        Boolean   @default(false)
+  active          Boolean   @default(true)
+  expiresAt       DateTime?
+  usedCount       Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
