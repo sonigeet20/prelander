@@ -1,30 +1,42 @@
 #!/usr/bin/env python3
-"""Parse GlobalAirportDatabase.txt and generate src/lib/airports.ts"""
+"""
+Merge GlobalAirportDatabase.txt + OpenFlights airports.dat → src/lib/airports.ts
 
+Source 1: GlobalAirportDatabase.txt (9,300 entries, colon-delimited)
+  Format: ICAO:IATA:NAME:CITY:COUNTRY:...
+
+Source 2: OpenFlights airports.dat (7,698 entries, CSV)
+  Format: id,"name","city","country","IATA","ICAO",lat,lon,alt,tz_offset,DST,tz,type,source
+
+Strategy: Parse both, deduplicate by IATA code (GlobalAirportDB wins for entries it has,
+OpenFlights fills gaps), clean country names, output TypeScript.
+"""
+
+import csv
 import os
+import re
 
-DB_PATH = "/Users/geetsoni/Downloads/GlobalAirportDatabase/GlobalAirportDatabase.txt"
+GLOBAL_DB_PATH = "/Users/geetsoni/Downloads/GlobalAirportDatabase/GlobalAirportDatabase.txt"
+OPENFLIGHTS_PATH = os.path.join(os.path.dirname(__file__), "openflights_airports.dat")
 OUT_PATH = os.path.join(os.path.dirname(__file__), "..", "src", "lib", "airports.ts")
 
-# Map raw country names from the database to clean display names
+# ─── Country name normalization ───────────────────────────────────────────────
+# Maps raw country names from EITHER source to clean, consistent display names
 COUNTRY_MAP = {
-    # UK constituent countries
+    # GlobalAirportDatabase quirks
     "ENGLAND": "United Kingdom",
-    "ENGALND": "United Kingdom",  # typo in source
+    "ENGALND": "United Kingdom",
     "SCOTLAND": "United Kingdom",
     "WALES": "United Kingdom",
     "NORTH IRELAND": "United Kingdom",
     "UK": "United Kingdom",
-    # USA
     "USA": "United States",
-    # Territories / dependencies
     "ACORES": "Portugal",
     "MADEIRA": "Portugal",
     "CANARY ISLANDS": "Spain",
     "SPANISH NORTH AFRICA": "Spain",
     "CORSE ISL.": "France",
     "FRENCH GUYANA": "French Guiana",
-    "FRENCH POLYNESIA": "French Polynesia",
     "TUAMOTU ISLANDS": "French Polynesia",
     "ANTILLES": "Netherlands Antilles",
     "LEEWARD ISLANDS": "Leeward Islands",
@@ -88,6 +100,23 @@ COUNTRY_MAP = {
     "SWAZILAND": "Eswatini",
     "ANGUILLA ISL.": "Anguilla",
     "KOREA": "South Korea",
+    "FRENCH POLYNESIA": "French Polynesia",
+
+    # OpenFlights quirks
+    "Korea, South": "South Korea",
+    "Korea, North": "North Korea",
+    "Congo (Kinshasa)": "DR Congo",
+    "Congo (Brazzaville)": "Republic of the Congo",
+    "Cote d'Ivoire": "Côte d'Ivoire",
+    "Burma": "Myanmar",
+    "Reunion": "Réunion",
+    "Virgin Islands": "U.S. Virgin Islands",
+    "Turks and Caicos Islands": "Turks and Caicos",
+    "Sao Tome and Principe": "São Tomé and Príncipe",
+    "Palestinian Territory": "Palestine",
+    "Curacao": "Curaçao",
+    "Saint Barthelemy": "Saint Barthélemy",
+    "Bonaire, Sint Eustatius and Saba": "Caribbean Netherlands",
 }
 
 
@@ -97,66 +126,125 @@ def title_case(s: str) -> str:
     result = []
     for i, w in enumerate(words):
         low = w.lower()
-        if i > 0 and low in ("of", "the", "and", "de", "du", "da", "al", "el"):
+        if i > 0 and low in ("of", "the", "and", "de", "du", "da", "al", "el", "la", "le"):
             result.append(low)
         else:
             result.append(w.capitalize())
     return " ".join(result)
 
 
-def parse():
-    airports = []
-    seen_iata = set()
+def clean_country(raw: str) -> str:
+    """Normalize a country name."""
+    raw = raw.strip()
+    if raw in COUNTRY_MAP:
+        return COUNTRY_MAP[raw]
+    # Try uppercase version (for GlobalAirportDB which is ALL CAPS)
+    if raw.upper() in COUNTRY_MAP:
+        return COUNTRY_MAP[raw.upper()]
+    # Already clean (OpenFlights uses proper case)
+    if raw and raw[0].isupper() and not raw.isupper():
+        return raw
+    # ALL CAPS → title case
+    if raw.isupper():
+        return title_case(raw)
+    return raw
 
-    with open(DB_PATH, "r", encoding="utf-8", errors="replace") as f:
+
+def clean_name(name: str, city: str) -> str:
+    """Clean an airport name, fall back to '{City} Airport' if empty/N/A."""
+    name = name.strip()
+    if not name or name.upper() == "N/A":
+        return f"{city} Airport" if city else "Airport"
+    return name
+
+
+def parse_global_db():
+    """Parse GlobalAirportDatabase.txt → dict keyed by IATA code."""
+    airports = {}
+    with open(GLOBAL_DB_PATH, "r", encoding="utf-8", errors="replace") as f:
         for line in f:
             parts = line.strip().split(":")
             if len(parts) < 5:
                 continue
 
-            icao = parts[0].strip()
             iata = parts[1].strip()
-            name = parts[2].strip()
-            city = parts[3].strip()
+            name_raw = parts[2].strip()
+            city_raw = parts[3].strip()
             country_raw = parts[4].strip()
 
-            # Skip entries without valid IATA codes
             if not iata or iata == "N/A" or len(iata) != 3:
                 continue
-
-            # Skip duplicates
-            if iata in seen_iata:
+            if iata in airports:
                 continue
-            seen_iata.add(iata)
 
-            # Clean country name
-            country = COUNTRY_MAP.get(country_raw, title_case(country_raw))
+            city = title_case(city_raw) if city_raw else ""
+            country = clean_country(country_raw)
+            name = clean_name(title_case(name_raw), city)
 
-            # Clean city name
-            city_clean = title_case(city) if city else ""
-
-            # Clean airport name — fall back to "{City} Airport" if missing
-            if not name or name.upper() == "N/A":
-                name_clean = f"{city_clean} Airport"
-            else:
-                name_clean = title_case(name)
-
-            airports.append({
+            airports[iata] = {
                 "code": iata,
-                "city": city_clean,
-                "name": name_clean,
+                "city": city,
+                "name": name,
                 "country": country,
-            })
-
-    # Sort by country then city
-    airports.sort(key=lambda a: (a["country"], a["city"], a["code"]))
-
+            }
     return airports
 
 
-def generate_ts(airports):
+def parse_openflights():
+    """Parse OpenFlights airports.dat CSV → dict keyed by IATA code."""
+    airports = {}
+    with open(OPENFLIGHTS_PATH, "r", encoding="utf-8", errors="replace") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            if len(row) < 8:
+                continue
+
+            name_raw = row[1].strip()
+            city_raw = row[2].strip()
+            country_raw = row[3].strip()
+            iata = row[4].strip().replace('"', '')
+
+            if not iata or iata == "\\N" or len(iata) != 3:
+                continue
+            if iata in airports:
+                continue
+
+            country = clean_country(country_raw)
+            name = clean_name(name_raw, city_raw)
+
+            airports[iata] = {
+                "code": iata,
+                "city": city_raw,
+                "name": name,
+                "country": country,
+            }
+    return airports
+
+
+def merge_airports(global_db, openflights):
+    """Merge both sources. GlobalAirportDB entries take priority; OpenFlights fills gaps."""
+    merged = dict(global_db)  # Start with GlobalAirportDB
+
+    added_from_of = 0
+    for iata, airport in openflights.items():
+        if iata not in merged:
+            merged[iata] = airport
+            added_from_of += 1
+
+    print(f"GlobalAirportDB: {len(global_db)} airports")
+    print(f"OpenFlights: {len(openflights)} airports")
+    print(f"New from OpenFlights: {added_from_of}")
+    print(f"Merged total: {len(merged)}")
+
+    return merged
+
+
+def generate_ts(airports_dict):
+    """Generate TypeScript source from merged airport data."""
+    airports = sorted(airports_dict.values(), key=lambda a: (a["country"], a["city"], a["code"]))
+
     lines = [
-        '// Auto-generated from GlobalAirportDatabase.txt',
+        '// Auto-generated from GlobalAirportDatabase.txt + OpenFlights airports.dat',
         f'// Total: {len(airports)} airports',
         '',
         'export interface Airport {',
@@ -170,10 +258,10 @@ def generate_ts(airports):
     ]
 
     for a in airports:
-        # Escape single quotes in names
-        city = a["city"].replace("'", "\\'")
-        name = a["name"].replace("'", "\\'")
-        country = a["country"].replace("'", "\\'")
+        # Escape single quotes and backslashes in values
+        city = a["city"].replace("\\", "\\\\").replace("'", "\\'")
+        name = a["name"].replace("\\", "\\\\").replace("'", "\\'")
+        country = a["country"].replace("\\", "\\\\").replace("'", "\\'")
         code = a["code"]
         lines.append(f"  {{ code: '{code}', city: '{city}', name: '{name}', country: '{country}' }},")
 
@@ -184,27 +272,30 @@ def generate_ts(airports):
 
 
 def main():
-    airports = parse()
+    global_db = parse_global_db()
+    openflights = parse_openflights()
+    merged = merge_airports(global_db, openflights)
 
     # Stats
     countries = {}
-    for a in airports:
+    for a in merged.values():
         countries[a["country"]] = countries.get(a["country"], 0) + 1
 
-    print(f"Total airports: {len(airports)}")
-    print(f"Total countries: {len(countries)}")
-
-    # Show top 15 countries
+    print(f"\nCountries: {len(countries)}")
     top = sorted(countries.items(), key=lambda x: -x[1])[:15]
     for c, n in top:
         print(f"  {c}: {n}")
 
-    # Verify key countries
-    for key in ["United States", "United Kingdom", "India", "Germany", "France", "Australia", "Canada"]:
-        count = countries.get(key, 0)
-        print(f"  CHECK {key}: {count}")
+    # Verify key airports that were previously missing
+    print("\nKey airport checks:")
+    for code in ["LHR", "JFK", "BER", "IST", "ICN", "KIX", "PVG", "DEL", "IXC", "DXB", "SYD", "DSA", "HND", "GMP"]:
+        if code in merged:
+            a = merged[code]
+            print(f"  ✅ {code} = {a['city']}, {a['country']} ({a['name']})")
+        else:
+            print(f"  ❌ {code} MISSING!")
 
-    ts_content = generate_ts(airports)
+    ts_content = generate_ts(merged)
 
     out_path = os.path.abspath(OUT_PATH)
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
