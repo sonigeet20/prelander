@@ -5,7 +5,7 @@ import { useState, useCallback } from "react";
 /**
  * FlightSearch — REAL flight search that shows actual results ON this site.
  *
- * Uses Amadeus API (via /api/flights/search) to fetch genuine flight offers
+ * Uses Google Flights data (via /api/flights/search) to fetch genuine flight offers
  * with real prices, airlines, stops, and durations.
  *
  * All "Book" CTAs go through /go/[slug] tracking link — no deep-linking to brand.

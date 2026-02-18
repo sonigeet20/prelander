@@ -43,19 +43,19 @@ const TOOLS: Record<string, ToolConfig> = {
     gradient: "from-indigo-600 to-violet-600",
     verticalType: "travel",
     features: [
-      { icon: "🔍", title: "Real-Time Prices", desc: "Live pricing from Amadeus GDS — the same system travel agents use" },
+      { icon: "🔍", title: "Real-Time Prices", desc: "Live pricing across hundreds of airlines — updated every search" },
       { icon: "✅", title: "All Airlines Compared", desc: "See options from full-service carriers, low-cost airlines, and alliance partners" },
       { icon: "📊", title: "Sort & Filter", desc: "Sort by cheapest, fastest, or fewest stops to find your ideal flight" },
       { icon: "🛡️", title: "No Hidden Fees", desc: "Prices shown include taxes. Book on the airline or OTA of your choice" },
     ],
     faqs: [
-      { q: "Where do the flight prices come from?", a: "We use the Amadeus Global Distribution System (GDS), the same data source used by travel agents and booking platforms worldwide. Prices are fetched in real-time." },
+      { q: "Where do the flight prices come from?", a: "We search real-time pricing across hundreds of airlines worldwide. Prices are fetched live every time you search, so you always see current availability." },
       { q: "Can I book flights directly on this page?", a: "We show you the best available flights and let you compare options. When you're ready to book, you'll be directed to the airline or booking platform to complete your purchase." },
       { q: "Are the prices accurate?", a: "Prices are fetched live and are accurate at the time of search. Final prices may vary slightly based on currency conversion and the booking platform's fees." },
-      { q: "How far in advance can I search?", a: "You can search flights up to 11 months in advance, which is the standard GDS booking window." },
+      { q: "How far in advance can I search?", a: "You can search flights up to 11 months in advance, covering all major airlines and routes worldwide." },
     ],
     metaTitle: (b) => `${b} Flight Search — Compare Real Flight Prices | Savvy`,
-    metaDesc: (b) => `Search and compare real-time flight prices on ${b}. Find the cheapest flights, compare airlines, stops, and durations. Powered by Amadeus GDS.`,
+    metaDesc: (b) => `Search and compare real-time flight prices on ${b}. Find the cheapest flights, compare airlines, stops, and durations. Updated live every search.`,
   },
   "loan-calculator": {
     name: "Loan & Mortgage Calculator",
@@ -119,7 +119,7 @@ const TOOLS: Record<string, ToolConfig> = {
     ],
     faqs: [
       { q: "Is this a real AI?", a: "Yes — our assistant is powered by OpenAI's GPT-4o-mini model. It provides real, thoughtful responses (not canned answers). For travel queries, it can even search real flight prices." },
-      { q: "Can the AI search for flights?", a: "Yes! On travel brand pages, ask the AI to find flights between any two cities and it will search real-time prices via the Amadeus GDS and show you actual flight options with prices." },
+      { q: "Can the AI search for flights?", a: "Yes! On travel brand pages, ask the AI to find flights between any two cities and it will search real-time prices and show you actual flight options with airlines, stops, and prices." },
       { q: "Is the advice trustworthy?", a: "Our AI provides helpful guidance based on its training data and real-time tools. However, we always recommend verifying important details (prices, policies) directly with the brand before making decisions." },
       { q: "Is my conversation private?", a: "Your messages are sent to our AI API and are not stored. No conversation history is saved after you close the page." },
     ],
