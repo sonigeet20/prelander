@@ -1,28 +1,28 @@
 "use client";
 
 import { FlightSearch } from "./FlightSearch";
-import { TravelBudgetPlanner } from "./TravelBudgetPlanner";
 import { LoanCalculator } from "./LoanCalculator";
-import { SavingsGoalCalculator } from "./SavingsGoalCalculator";
-import { PricingCalculator } from "./PricingCalculator";
-import { PriceCompare } from "./PriceCompare";
-import { HealthPlanCompare } from "./HealthPlanCompare";
-import { SmartSearch } from "./SmartSearch";
+import { ROICalculator } from "./ROICalculator";
+import { AIAssistant } from "./AIAssistant";
 
 /**
- * MicroAppSelector — Maps a brand's verticalType to the appropriate
- * interactive micro-app(s). Each micro-app provides real utility and
- * embeds tracking CTAs naturally within user-initiated interactions.
+ * MicroAppSelector — Maps verticalType to REAL micro-apps.
+ *
+ * Every tool provides genuine utility:
+ *   - FlightSearch: Deep-link builder → opens real results on brand site
+ *   - LoanCalculator: Real amortization math
+ *   - ROICalculator: Real ROI/TCO calculations
+ *   - AIAssistant: GPT-4o-mini powered chat (real AI responses)
  *
  * Verticals → Tools:
- *   travel        → FlightSearch + TravelBudgetPlanner
- *   finance       → LoanCalculator + SavingsGoalCalculator
- *   b2b_saas      → PricingCalculator
- *   subscription  → PricingCalculator (shared with SaaS)
- *   ecommerce     → PriceCompare
- *   d2c           → PriceCompare
- *   health        → HealthPlanCompare
- *   other         → SmartSearch (generic fallback)
+ *   travel       → FlightSearch + AI Travel Assistant
+ *   finance      → LoanCalculator + AI Finance Advisor
+ *   b2b_saas     → ROICalculator + AI Software Advisor
+ *   subscription → ROICalculator + AI Subscription Advisor
+ *   ecommerce    → AI Shopping Assistant
+ *   d2c          → AI Product Expert
+ *   health       → AI Health Plan Guide
+ *   other        → AI Research Assistant
  */
 
 interface MicroAppProps {
@@ -32,20 +32,16 @@ interface MicroAppProps {
   brandDomain: string;
 }
 
-export function MicroAppSelector({
-  verticalType,
-  brandName,
-  trackingHref,
-  brandDomain,
-}: MicroAppProps) {
+export function MicroAppSelector({ verticalType, brandName, trackingHref, brandDomain }: MicroAppProps) {
   const props = { brandName, trackingHref, brandDomain };
+  const vertical = verticalType || "other";
 
-  switch (verticalType) {
+  switch (vertical) {
     case "travel":
       return (
         <div className="space-y-6">
           <FlightSearch {...props} />
-          <TravelBudgetPlanner {...props} />
+          <AIAssistant {...props} vertical="travel" />
         </div>
       );
 
@@ -53,22 +49,36 @@ export function MicroAppSelector({
       return (
         <div className="space-y-6">
           <LoanCalculator {...props} />
-          <SavingsGoalCalculator {...props} />
+          <AIAssistant {...props} vertical="finance" />
         </div>
       );
 
     case "b2b_saas":
+      return (
+        <div className="space-y-6">
+          <ROICalculator {...props} />
+          <AIAssistant {...props} vertical="b2b_saas" />
+        </div>
+      );
+
     case "subscription":
-      return <PricingCalculator {...props} />;
+      return (
+        <div className="space-y-6">
+          <ROICalculator {...props} />
+          <AIAssistant {...props} vertical="subscription" />
+        </div>
+      );
 
     case "ecommerce":
+      return <AIAssistant {...props} vertical="ecommerce" />;
+
     case "d2c":
-      return <PriceCompare {...props} />;
+      return <AIAssistant {...props} vertical="d2c" />;
 
     case "health":
-      return <HealthPlanCompare {...props} />;
+      return <AIAssistant {...props} vertical="health" />;
 
     default:
-      return <SmartSearch {...props} />;
+      return <AIAssistant {...props} vertical="other" />;
   }
 }
