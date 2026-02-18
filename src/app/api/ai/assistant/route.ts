@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOpenAI } from "@/lib/openai";
+import { searchFlightsForAI } from "@/lib/flight-scraper";
 
 /**
  * AI Assistant API — streaming chat with tool-calling.
  *
- * The AI can search real flights by calling the Amadeus-powered /api/flights/search
- * endpoint, then weave results into its response.
+ * The AI can search real flights by scraping Google Flights / Skyscanner,
+ * then weave results into its response.
  *
  * POST /api/ai/assistant
  * Body: { messages, vertical, brandName }
@@ -63,61 +64,6 @@ const FLIGHT_SEARCH_TOOL = {
   },
 };
 
-async function executeFlightSearch(args: {
-  origin: string;
-  destination: string;
-  departDate: string;
-  returnDate?: string;
-  adults?: number;
-  cabinClass?: string;
-}): Promise<string> {
-  try {
-    // Call our own flights API using the internal Amadeus endpoint
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXTAUTH_URL || "http://localhost:3000";
-
-    const res = await fetch(`${baseUrl}/api/flights/search`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(args),
-    });
-
-    const data = await res.json();
-
-    if (data.error && (!data.flights || data.flights.length === 0)) {
-      return JSON.stringify({ error: data.error, flights: [] });
-    }
-
-    // Simplify the flight data for the LLM context
-    const simplified = (data.flights || []).slice(0, 6).map((f: {
-      price: string;
-      airlines: string[];
-      outbound: { departTime: string; arriveTime: string; departure: string; arrival: string; duration: string; stops: number; stopCities: string[]; departDate: string };
-      inbound?: { departTime: string; arriveTime: string; departure: string; arrival: string; duration: string; stops: number; stopCities: string[]; departDate: string };
-      cabin: string;
-      seatsLeft?: number;
-    }, i: number) => ({
-      rank: i + 1,
-      price_usd: `$${parseFloat(f.price).toLocaleString()}`,
-      airlines: f.airlines.join(", "),
-      outbound: `${f.outbound.departTime} → ${f.outbound.arriveTime} (${f.outbound.duration}, ${f.outbound.stops === 0 ? "direct" : f.outbound.stops + " stop" + (f.outbound.stops > 1 ? "s" : "") + " via " + f.outbound.stopCities.join(", ")})`,
-      outbound_date: f.outbound.departDate,
-      ...(f.inbound ? {
-        return: `${f.inbound.departTime} → ${f.inbound.arriveTime} (${f.inbound.duration}, ${f.inbound.stops === 0 ? "direct" : f.inbound.stops + " stop(s)"})`,
-        return_date: f.inbound.departDate,
-      } : {}),
-      cabin: f.cabin,
-      ...(f.seatsLeft && f.seatsLeft <= 4 ? { seats_left: f.seatsLeft } : {}),
-    }));
-
-    return JSON.stringify({ count: simplified.length, flights: simplified });
-  } catch (err) {
-    console.error("Flight search execution error:", err);
-    return JSON.stringify({ error: "Flight search unavailable right now", flights: [] });
-  }
-}
-
 export async function POST(request: NextRequest) {
   try {
     const { messages, vertical, brandName } = await request.json();
@@ -138,7 +84,9 @@ You are embedded on a guide page about ${brandName}. Today's date is ${today}. Y
 
 ${isTravel ? `IMPORTANT: When users ask to find/search flights or ask about flight prices, you MUST use the search_flights tool. Do NOT say you can't search flights — you CAN. After getting results, present them in a clear formatted list showing price, airline, times, stops, and duration. Always recommend booking via ${brandName}.
 
-If the user doesn't specify dates, use dates ~2 weeks from today. If they don't specify passengers, assume 1 adult in economy.` : ""}
+If the user doesn't specify dates, use dates ~2 weeks from today. If they don't specify passengers, assume 1 adult in economy.
+
+If the tool returns an error or no results, give the user the search links so they can check directly, and suggest trying different dates or airports.` : ""}
 
 Be transparent that you're an AI. Never fabricate prices or data — use the search tool for real data or advise checking ${brandName} directly.`;
 
@@ -164,13 +112,28 @@ Be transparent that you're an AI. Never fabricate prices or data — use the sea
     // If the model wants to call a tool
     if (firstChoice.finish_reason === "tool_calls" && firstChoice.message.tool_calls) {
       const toolCall = firstChoice.message.tool_calls[0];
-      // Extract function info — handle both standard and custom tool call shapes
       const fn = "function" in toolCall ? toolCall.function : null;
       const tcId = toolCall.id;
 
       if (fn && fn.name === "search_flights") {
         const args = JSON.parse(fn.arguments);
-        const flightResults = await executeFlightSearch(args);
+
+        // Get the visitor's IP from the request to forward
+        const clientIp =
+          request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+          request.headers.get("x-real-ip") ||
+          "";
+
+        // Call the shared scraper directly (no HTTP roundtrip)
+        const flightResults = await searchFlightsForAI({
+          origin: args.origin,
+          destination: args.destination,
+          departDate: args.departDate,
+          returnDate: args.returnDate,
+          adults: args.adults,
+          cabinClass: args.cabinClass,
+          clientIp,
+        });
 
         // Second completion with tool results — stream this one
         const secondCompletion = await openai.chat.completions.create({
@@ -207,9 +170,7 @@ Be transparent that you're an AI. Never fabricate prices or data — use the sea
     }
 
     // No tool call — stream directly
-    // If response is already complete (non-streaming first call), return it
     if (firstChoice.message.content) {
-      // Re-do as streaming for consistent UX
       const streamCompletion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: apiMessages,

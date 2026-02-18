@@ -146,6 +146,7 @@ export function FlightSearch({
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"price" | "duration" | "stops">("price");
+  const [dataSource, setDataSource] = useState<string>("");
 
   const filter = (q: string) => {
     if (q.length < 1) return [];
@@ -180,8 +181,13 @@ export function FlightSearch({
       });
 
       const data = await res.json();
+      setDataSource(data.source || "");
       if (data.error && (!data.flights || data.flights.length === 0)) {
         setError(data.error);
+      } else if (data.source === "deeplink-only" || data.count === 0) {
+        // Scraping didn't return live prices — show redirect CTA
+        setFlights([]);
+        setError("Live prices aren't available right now. Click below to check prices directly.");
       } else {
         setFlights(data.flights || []);
       }
@@ -650,7 +656,7 @@ export function FlightSearch({
         )}
 
         <p className="text-[10px] text-gray-400 text-center mt-4">
-          Real-time prices from Amadeus GDS • Final booking on {brandName}
+          Live flight prices • Final booking on {brandName}
         </p>
       </div>
     </div>
