@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { AIRPORTS } from "@/lib/airports";
 
 /**
  * FlightSearch — REAL flight search that shows actual results ON this site.
@@ -10,68 +11,6 @@ import { useState, useCallback } from "react";
  *
  * All "Book" CTAs go through /go/[slug] tracking link — no deep-linking to brand.
  */
-
-const AIRPORTS = [
-  { code: "LHR", city: "London Heathrow", country: "UK" },
-  { code: "LGW", city: "London Gatwick", country: "UK" },
-  { code: "STN", city: "London Stansted", country: "UK" },
-  { code: "JFK", city: "New York JFK", country: "US" },
-  { code: "EWR", city: "Newark", country: "US" },
-  { code: "LAX", city: "Los Angeles", country: "US" },
-  { code: "SFO", city: "San Francisco", country: "US" },
-  { code: "ORD", city: "Chicago O'Hare", country: "US" },
-  { code: "MIA", city: "Miami", country: "US" },
-  { code: "ATL", city: "Atlanta", country: "US" },
-  { code: "DFW", city: "Dallas/Fort Worth", country: "US" },
-  { code: "SEA", city: "Seattle", country: "US" },
-  { code: "BOS", city: "Boston", country: "US" },
-  { code: "DEN", city: "Denver", country: "US" },
-  { code: "LAS", city: "Las Vegas", country: "US" },
-  { code: "CDG", city: "Paris CDG", country: "France" },
-  { code: "FRA", city: "Frankfurt", country: "Germany" },
-  { code: "MUC", city: "Munich", country: "Germany" },
-  { code: "AMS", city: "Amsterdam", country: "Netherlands" },
-  { code: "BCN", city: "Barcelona", country: "Spain" },
-  { code: "MAD", city: "Madrid", country: "Spain" },
-  { code: "FCO", city: "Rome", country: "Italy" },
-  { code: "IST", city: "Istanbul", country: "Turkey" },
-  { code: "DXB", city: "Dubai", country: "UAE" },
-  { code: "DOH", city: "Doha", country: "Qatar" },
-  { code: "SIN", city: "Singapore", country: "Singapore" },
-  { code: "HND", city: "Tokyo Haneda", country: "Japan" },
-  { code: "NRT", city: "Tokyo Narita", country: "Japan" },
-  { code: "ICN", city: "Seoul Incheon", country: "South Korea" },
-  { code: "BKK", city: "Bangkok", country: "Thailand" },
-  { code: "HKG", city: "Hong Kong", country: "China" },
-  { code: "PVG", city: "Shanghai Pudong", country: "China" },
-  { code: "PEK", city: "Beijing Capital", country: "China" },
-  { code: "DEL", city: "Delhi", country: "India" },
-  { code: "BOM", city: "Mumbai", country: "India" },
-  { code: "BLR", city: "Bangalore", country: "India" },
-  { code: "MAA", city: "Chennai", country: "India" },
-  { code: "HYD", city: "Hyderabad", country: "India" },
-  { code: "CCU", city: "Kolkata", country: "India" },
-  { code: "SYD", city: "Sydney", country: "Australia" },
-  { code: "MEL", city: "Melbourne", country: "Australia" },
-  { code: "YYZ", city: "Toronto", country: "Canada" },
-  { code: "YVR", city: "Vancouver", country: "Canada" },
-  { code: "MEX", city: "Mexico City", country: "Mexico" },
-  { code: "CUN", city: "Cancún", country: "Mexico" },
-  { code: "GRU", city: "São Paulo", country: "Brazil" },
-  { code: "DUB", city: "Dublin", country: "Ireland" },
-  { code: "ZRH", city: "Zurich", country: "Switzerland" },
-  { code: "CPH", city: "Copenhagen", country: "Denmark" },
-  { code: "LIS", city: "Lisbon", country: "Portugal" },
-  { code: "ATH", city: "Athens", country: "Greece" },
-  { code: "PRG", city: "Prague", country: "Czech Republic" },
-  { code: "BUD", city: "Budapest", country: "Hungary" },
-  { code: "WAW", city: "Warsaw", country: "Poland" },
-  { code: "JED", city: "Jeddah", country: "Saudi Arabia" },
-  { code: "RUH", city: "Riyadh", country: "Saudi Arabia" },
-  { code: "CMB", city: "Colombo", country: "Sri Lanka" },
-  { code: "KTM", city: "Kathmandu", country: "Nepal" },
-  { code: "DAC", city: "Dhaka", country: "Bangladesh" },
-];
 
 interface FlightSegment {
   from: string;
@@ -164,12 +103,16 @@ export function FlightSearch({
   const filter = (q: string) => {
     if (q.length < 1) return [];
     const l = q.toLowerCase();
-    return AIRPORTS.filter(
+    // Exact code match first, then city/country partial match
+    const exact = AIRPORTS.filter((a) => a.code.toLowerCase() === l);
+    const partial = AIRPORTS.filter(
       (a) =>
-        a.city.toLowerCase().includes(l) ||
-        a.code.toLowerCase() === l ||
-        a.country.toLowerCase().includes(l)
-    ).slice(0, 6);
+        a.code.toLowerCase() !== l &&
+        (a.city.toLowerCase().includes(l) ||
+         a.code.toLowerCase().startsWith(l) ||
+         a.country.toLowerCase().includes(l))
+    );
+    return [...exact, ...partial].slice(0, 10);
   };
 
   const searchFlights = useCallback(async () => {
