@@ -8,6 +8,7 @@ import { SavingsCalculator } from "@/components/SavingsCalculator";
 import { InteractiveChecklist } from "@/components/InteractiveChecklist";
 import { ScoreCard } from "@/components/ScoreCard";
 import { ProConAnalysis } from "@/components/ProConAnalysis";
+import { MicroAppSelector } from "@/components/micro-apps";
 
 /* ─── Types for GeneratedPage content JSON ─── */
 interface PageSection {
@@ -287,6 +288,9 @@ export default async function GuidePage({
 
   const brandName = page.offer.brand.name;
   const brandDomain = page.offer.brand.domain;
+  const verticalType = (page.offer.brand as Record<string, unknown>).verticalType as string | null;
+  const offerSlug = page.offer.slug;
+  const trackingHref = `/go/${offerSlug}`;
   const vars = buildVarMap(sp, page.keyword?.keyword, slug, brandName);
 
 
@@ -447,10 +451,22 @@ export default async function GuidePage({
               </FadeIn>
             )}
 
+            {/* ─── Interactive Tool ─── */}
+            <FadeIn>
+              <div className="mb-10">
+                <MicroAppSelector
+                  verticalType={verticalType}
+                  brandName={titleCase(brandName)}
+                  trackingHref={trackingHref}
+                  brandDomain={brandDomain}
+                />
+              </div>
+            </FadeIn>
+
             {/* Sections */}
             {content.sections.map((section, i) => (
               <FadeIn key={i} delay={i < 3 ? i * 80 : 0}>
-                <SectionRenderer section={section} index={i} brandDomain={brandDomain} />
+                <SectionRenderer section={section} index={i} brandDomain={brandDomain} offerSlug={offerSlug} />
               </FadeIn>
             ))}
 
@@ -472,7 +488,7 @@ export default async function GuidePage({
                     <div className="text-xs text-gray-400">{brandDomain}</div>
                   </div>
                 </div>
-                <a href={`https://${brandDomain}`} className="block w-full text-center py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-indigo-200 transition-all" rel="nofollow sponsored" target="_blank">
+                <a href={trackingHref} className="block w-full text-center py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-indigo-200 transition-all" rel="nofollow sponsored">
                   Visit {titleCase(brandName)} →
                 </a>
               </div>
@@ -664,8 +680,9 @@ function inlineMarkdown(text: string): React.ReactNode {
 }
 
 /* ─── Section Renderer ─── */
-function SectionRenderer({ section, index, brandDomain }: { section: PageSection; index: number; brandDomain: string }) {
+function SectionRenderer({ section, index, brandDomain, offerSlug }: { section: PageSection; index: number; brandDomain: string; offerSlug: string }) {
   const id = `section-${index}`;
+  const trackingHref = `/go/${offerSlug}`;
 
   switch (section.type) {
     case "hero":
@@ -677,7 +694,7 @@ function SectionRenderer({ section, index, brandDomain }: { section: PageSection
             {section.heading && <h2 className="text-2xl font-bold text-white mb-3">{section.heading}</h2>}
             {section.subheading && <p className="text-indigo-100 mb-6 max-w-lg">{section.subheading}</p>}
             {section.ctaText && (
-              <a href={section.ctaUrl || `https://${brandDomain}`} className="inline-flex items-center gap-2 px-7 py-3.5 bg-white text-indigo-700 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all" rel="nofollow sponsored" target="_blank">
+              <a href={trackingHref} className="inline-flex items-center gap-2 px-7 py-3.5 bg-white text-indigo-700 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all" rel="nofollow sponsored">
                 {section.ctaText}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </a>
@@ -860,7 +877,7 @@ function SectionRenderer({ section, index, brandDomain }: { section: PageSection
             {section.heading && <h2 className="text-2xl font-bold text-white mb-3">{section.heading}</h2>}
             {section.content && <p className="text-indigo-100 mb-6 max-w-md mx-auto">{section.content}</p>}
             {section.ctaText && (
-              <a href={section.ctaUrl || `https://${brandDomain}`} className="inline-flex items-center gap-2 px-8 py-4 bg-white text-indigo-700 rounded-xl font-bold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all text-lg" rel="nofollow sponsored" target="_blank">
+              <a href={trackingHref} className="inline-flex items-center gap-2 px-8 py-4 bg-white text-indigo-700 rounded-xl font-bold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all text-lg" rel="nofollow sponsored">
                 {section.ctaText}
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
               </a>
