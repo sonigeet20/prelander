@@ -105,8 +105,49 @@ const AIRLINE_TO_CODE: Record<string, string> = {
   "akasa air": "QP", "batik air": "ID",
 };
 
-// ─── Airport IATA → Google's city freebase ID mapping ───────────────
-// Not needed — we use the simpler ?q= URL format that accepts IATA codes
+// ─── In-memory cache (30 min TTL) ──────────────────────────────────
+// Same route + date + cabin → cached result for 30 minutes.
+// 1,000 users searching DEL→DXB = 1 Google request, not 1,000.
+
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const MAX_CACHE_ENTRIES = 200; // prevent unbounded memory growth
+
+interface CacheEntry {
+  result: FlightSearchResult;
+  expiresAt: number;
+}
+
+const flightCache = new Map<string, CacheEntry>();
+
+function buildCacheKey(params: FlightSearchParams): string {
+  return [
+    params.origin.toUpperCase(),
+    params.destination.toUpperCase(),
+    params.departDate,
+    params.returnDate || "ow",
+    String(params.adults || 1),
+    (params.cabinClass || "ECONOMY").toUpperCase(),
+  ].join("|");
+}
+
+function getCached(key: string): FlightSearchResult | null {
+  const entry = flightCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    flightCache.delete(key);
+    return null;
+  }
+  return entry.result;
+}
+
+function setCache(key: string, result: FlightSearchResult): void {
+  // Evict oldest entries if at capacity
+  if (flightCache.size >= MAX_CACHE_ENTRIES) {
+    const firstKey = flightCache.keys().next().value;
+    if (firstKey) flightCache.delete(firstKey);
+  }
+  flightCache.set(key, { result, expiresAt: Date.now() + CACHE_TTL_MS });
+}
 
 // ─── Random user agents for rotation ────────────────────────────────
 
@@ -354,6 +395,15 @@ export async function searchFlights(
     };
   }
 
+  // ─── Check cache first ────────────────────────────────────────
+  const cacheKey = buildCacheKey(params);
+  const cached = getCached(cacheKey);
+  if (cached) {
+    console.log("[flight-scraper] Cache HIT for", cacheKey);
+    return { ...cached, source: "google-flights-cached" };
+  }
+  console.log("[flight-scraper] Cache MISS for", cacheKey);
+
   const headers: Record<string, string> = {
     "User-Agent": randomUA(),
     Accept:
@@ -439,12 +489,20 @@ export async function searchFlights(
     // Sort by price
     flights.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
 
-    return {
+    const result: FlightSearchResult = {
       flights: flights.slice(0, 8),
       count: Math.min(flights.length, 8),
       searchedAt: new Date().toISOString(),
       source: "google-flights",
     };
+
+    // ─── Store in cache ───────────────────────────────────────────
+    if (result.count > 0) {
+      setCache(cacheKey, result);
+      console.log("[flight-scraper] Cached", result.count, "flights for", cacheKey);
+    }
+
+    return result;
   } catch (err) {
     console.error("[flight-scraper] Error:", err);
     return {
