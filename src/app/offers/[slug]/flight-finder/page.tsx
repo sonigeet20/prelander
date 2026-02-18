@@ -193,6 +193,14 @@ export default async function FlightFinderOfferPage({
       {/* ─── Main Content ─── */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pb-16">
 
+        {/* ─── Flight Search Micro-App (FIRST after headline) ─── */}
+        <div className="mb-12">
+          <FlightSearch
+            brandName={brandName}
+            trackingHref={trackingHref}
+            brandDomain={brandDomain}
+          />
+        </div>
         {/* ─── Feature Highlights ─── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
           {[
@@ -208,16 +216,6 @@ export default async function FlightFinderOfferPage({
             </div>
           ))}
         </div>
-
-        {/* ─── Flight Search Micro-App ─── */}
-        <div className="mb-16">
-          <FlightSearch
-            brandName={brandName}
-            trackingHref={trackingHref}
-            brandDomain={brandDomain}
-          />
-        </div>
-
         {/* ═══════════════════════════════════════════════════════════
             BRAND-KEYWORD SEO CONTENT BELOW THE TOOL
             - Increases Google Ads Quality Score

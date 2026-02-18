@@ -235,6 +235,15 @@ export default async function AIAssistantOfferPage({
       {/* ─── Main Content ─── */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pb-16">
 
+        {/* ─── AI Assistant Micro-App (FIRST after headline) ─── */}
+        <div className="mb-12">
+          <AIAssistant
+            brandName={brandName}
+            trackingHref={trackingHref}
+            brandDomain={brandDomain}
+            vertical={vertical}
+          />
+        </div>
         {/* ─── Feature Highlights ─── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
           {[
@@ -250,17 +259,6 @@ export default async function AIAssistantOfferPage({
             </div>
           ))}
         </div>
-
-        {/* ─── AI Assistant Micro-App ─── */}
-        <div className="mb-16">
-          <AIAssistant
-            brandName={brandName}
-            trackingHref={trackingHref}
-            brandDomain={brandDomain}
-            vertical={vertical}
-          />
-        </div>
-
         {/* ═══════════════════════════════════════════════════════════
             BRAND-KEYWORD SEO CONTENT BELOW THE TOOL
             - Increases Google Ads Quality Score
