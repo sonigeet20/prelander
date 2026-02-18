@@ -105,6 +105,19 @@ interface FlightResult {
   inbound?: FlightLeg;
   cabin: string;
   seatsLeft?: number;
+  deepLink?: string;
+}
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: "$", EUR: "€", GBP: "£", INR: "₹", CAD: "CA$", AUD: "A$",
+  AED: "AED ", SGD: "S$", JPY: "¥", CNY: "¥", THB: "฿", MYR: "RM",
+};
+
+function formatPrice(price: string, currency: string): string {
+  const num = parseInt(price, 10);
+  if (isNaN(num) || num === 0) return "Check site";
+  const symbol = CURRENCY_SYMBOLS[currency] || currency + " ";
+  return `${symbol}${num.toLocaleString()}`;
 }
 
 function getDefaultDepart() {
@@ -215,7 +228,7 @@ export function FlightSearch({
           <div>
             <h3 className="text-white font-bold text-lg">Flight Search</h3>
             <p className="text-indigo-200 text-xs">
-              Real-time prices • Book via {brandName}
+              Live prices • Book via {brandName}
             </p>
           </div>
         </div>
@@ -491,7 +504,7 @@ export function FlightSearch({
                           </div>
                           <div className="ml-4 text-right pl-4 border-l border-gray-200">
                             <p className="text-xl font-extrabold text-indigo-700">
-                              ${parseFloat(flight.price).toLocaleString()}
+                              {formatPrice(flight.price, flight.currency)}
                             </p>
                             <p className="text-[10px] text-gray-400">
                               {tripType === "rt" ? "round trip" : "one way"}
