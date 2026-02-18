@@ -1,29 +1,35 @@
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
+
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "About Us | Prelander Editorial",
+  title: "About Us | Savvy",
   description:
-    "Learn about our editorial team, review methodology, and affiliate disclosure policy.",
+    "Learn about Savvy — our research methodology, editorial standards, and affiliate disclosure.",
 };
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-slate-900 text-white py-8">
-        <div className="max-w-3xl mx-auto px-4">
-          <h1 className="text-3xl font-bold">About Prelander Editorial</h1>
-          <p className="text-slate-300 mt-2">
-            Independent product reviews to help you make informed decisions.
-          </p>
-        </div>
-      </header>
+    <div className="min-h-screen bg-white flex flex-col">
+      <SiteHeader />
 
-      <main className="max-w-3xl mx-auto px-4 py-10 space-y-10">
+      <main className="flex-1">
+        <section className="bg-gradient-to-b from-indigo-50 to-white py-14">
+          <div className="max-w-3xl mx-auto px-4">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">About Savvy</h1>
+            <p className="text-gray-600">
+              Independent research guides to help you make informed decisions.
+            </p>
+          </div>
+        </section>
+
+        <div className="max-w-3xl mx-auto px-4 py-10 space-y-10">
         {/* Who We Are */}
         <section>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Who We Are</h2>
           <p className="text-gray-700 leading-relaxed mb-4">
-            Prelander Editorial is an independent review platform. Our team
+            Savvy is an independent research platform. Our team
             researches products and services across multiple categories —
             including travel, cybersecurity, finance, and software — to provide
             consumers with clear, honest, and transparent information.
@@ -102,10 +108,10 @@ export default function AboutPage() {
             you have questions about our affiliate relationships, please contact
             us at{" "}
             <a
-              href="mailto:support@prelander.ai"
+              href="mailto:hello@savvy.guide"
               className="text-indigo-600 underline"
             >
-              support@prelander.ai
+              hello@savvy.guide
             </a>
             .
           </p>
@@ -115,13 +121,13 @@ export default function AboutPage() {
         <section>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Contact Us</h2>
           <p className="text-gray-700 leading-relaxed">
-            For questions, corrections, or feedback about any of our reviews,
+            For questions, corrections, or feedback about any of our guides,
             please reach out to our editorial team at{" "}
             <a
-              href="mailto:support@prelander.ai"
+              href="mailto:hello@savvy.guide"
               className="text-indigo-600 underline"
             >
-              support@prelander.ai
+              hello@savvy.guide
             </a>
             . We take accuracy seriously and will update our content promptly if
             any errors are identified.
@@ -137,11 +143,10 @@ export default function AboutPage() {
             ← Back to Home
           </a>
         </div>
+        </div>
       </main>
 
-      <footer className="bg-slate-900 text-slate-400 text-xs py-6 text-center">
-        © {new Date().getFullYear()} Prelander Editorial. All rights reserved.
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

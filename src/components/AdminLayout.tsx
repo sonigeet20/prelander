@@ -18,9 +18,10 @@ export function AdminLayout({ children, userEmail }: AdminLayoutProps) {
 
   const navItems = [
     { href: "/admin/dashboard", label: "Dashboard", icon: "📊" },
-    { href: "/admin/campaigns", label: "Campaigns", icon: "🎯" },
+    { href: "/admin/brands", label: "Brands", icon: "🏢" },
+    { href: "/admin/offers", label: "Offers", icon: "🎯" },
+    { href: "/admin/pages", label: "Pages", icon: "📄" },
     { href: "/admin/analytics", label: "Analytics", icon: "📈" },
-    { href: "/admin/settings", label: "Settings", icon: "⚙️" },
   ];
 
   return (
@@ -35,11 +36,11 @@ export function AdminLayout({ children, userEmail }: AdminLayoutProps) {
         <div className="flex items-center justify-between h-20 px-6 border-b border-slate-700">
           <div className={`flex items-center gap-3 ${!sidebarOpen && "justify-center w-full"}`}>
             <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-bold">P</span>
+              <span className="text-white font-bold">S</span>
             </div>
             {sidebarOpen && (
               <div className="flex flex-col">
-                <span className="font-bold text-sm">Prelander</span>
+                <span className="font-bold text-sm">Savvy</span>
                 <span className="text-xs text-slate-400">Admin</span>
               </div>
             )}
@@ -99,10 +100,12 @@ export function AdminLayout({ children, userEmail }: AdminLayoutProps) {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
                 {pathname.includes("dashboard") && "Dashboard"}
-                {pathname.includes("campaigns") && !pathname.includes("/campaigns/") && "Campaigns"}
-                {pathname.includes("/campaigns/") && "Edit Campaign"}
+                {pathname.includes("brands") && !pathname.includes("/brands/") && "Brands"}
+                {pathname.includes("/brands/") && "Brand Details"}
+                {pathname.includes("offers") && !pathname.includes("/offers/") && "Offers"}
+                {pathname.includes("/offers/") && "Offer Details"}
+                {pathname.includes("pages") && "Generated Pages"}
                 {pathname.includes("analytics") && "Analytics"}
-                {pathname.includes("settings") && "Settings"}
               </h1>
             </div>
             <div className="flex items-center gap-4">

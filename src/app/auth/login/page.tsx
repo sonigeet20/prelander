@@ -46,12 +46,12 @@ export default function LoginPage() {
           {/* Logo/Branding */}
           <div className="mb-8">
             <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-blue-600 rounded-lg flex items-center justify-center mb-4">
-              <span className="text-white font-bold text-xl">P</span>
+              <span className="text-white font-bold text-xl">S</span>
             </div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
-              Prelander Admin
+              Savvy Admin
             </h1>
-            <p className="text-gray-600 text-sm mt-1">Campaign Management Dashboard</p>
+            <p className="text-gray-600 text-sm mt-1">Content Engine Dashboard</p>
           </div>
 
           {/* Error Alert */}
@@ -150,7 +150,7 @@ export default function LoginPage() {
 
         {/* Footer Info */}
         <p className="text-center text-white/70 text-xs mt-6">
-          © 2026 Prelander. Secure Admin Access.
+          © 2026 Savvy. Secure Admin Access.
         </p>
       </div>
 

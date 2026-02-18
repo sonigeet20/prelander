@@ -1,27 +1,33 @@
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
+
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Terms of Use | Prelander Editorial",
-  description: "Terms and conditions for using the Prelander Editorial website.",
+  title: "Terms of Use | Savvy",
+  description: "Terms and conditions for using the Savvy research platform.",
 };
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-slate-900 text-white py-8">
-        <div className="max-w-3xl mx-auto px-4">
-          <h1 className="text-3xl font-bold">Terms of Use</h1>
-          <p className="text-slate-300 mt-2">Last updated: February 2026</p>
-        </div>
-      </header>
+    <div className="min-h-screen bg-white flex flex-col">
+      <SiteHeader />
 
-      <main className="max-w-3xl mx-auto px-4 py-10 space-y-8 text-gray-700 leading-relaxed">
+      <main className="flex-1">
+        <section className="bg-gradient-to-b from-indigo-50 to-white py-14">
+          <div className="max-w-3xl mx-auto px-4">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Terms of Use</h1>
+            <p className="text-gray-500 text-sm">Last updated: February 2026</p>
+          </div>
+        </section>
+
+        <div className="max-w-3xl mx-auto px-4 py-10 space-y-8 text-gray-700 leading-relaxed">
         <section>
           <h2 className="text-xl font-bold text-gray-900 mb-3">
             1. Acceptance of Terms
           </h2>
           <p>
-            By accessing and using the Prelander Editorial website (&quot;the
+            By accessing and using the Savvy website (&quot;the
             Site&quot;), you accept and agree to be bound by these Terms of Use.
             If you do not agree to these terms, please do not use the Site.
           </p>
@@ -87,11 +93,11 @@ export default function TermsPage() {
           </h2>
           <p>
             All editorial content, design, and code on this Site are the
-            property of Prelander Editorial or its licensors. Product names,
+            property of Savvy or its licensors. Product names,
             logos, and trademarks mentioned on the Site belong to their
             respective owners and are used for identification purposes only.
             Their use does not imply endorsement by or affiliation with
-            Prelander Editorial.
+            Savvy.
           </p>
         </section>
 
@@ -100,7 +106,7 @@ export default function TermsPage() {
             6. Limitation of Liability
           </h2>
           <p>
-            Prelander Editorial shall not be liable for any direct, indirect,
+            Savvy shall not be liable for any direct, indirect,
             incidental, or consequential damages arising from your use of the
             Site or reliance on any content provided herein. Use the Site at
             your own risk.
@@ -126,10 +132,10 @@ export default function TermsPage() {
           <p>
             For questions about these Terms of Use, please contact us at{" "}
             <a
-              href="mailto:support@prelander.ai"
+              href="mailto:hello@savvy.guide"
               className="text-indigo-600 underline"
             >
-              support@prelander.ai
+              hello@savvy.guide
             </a>
             .
           </p>
@@ -143,11 +149,10 @@ export default function TermsPage() {
             ← Back to Home
           </a>
         </div>
+        </div>
       </main>
 
-      <footer className="bg-slate-900 text-slate-400 text-xs py-6 text-center">
-        © {new Date().getFullYear()} Prelander Editorial. All rights reserved.
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,99 +7,258 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Auth ────────────────────────────────────────────
+
 model User {
-  id        String     @id @default(cuid())
-  email     String     @unique
+  id        String   @id @default(cuid())
+  email     String   @unique
   password  String
   name      String?
-  role      String     @default("admin")
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model Campaign {
-  id                    String   @id @default(cuid())
-  offerName             String
-  brandName             String   @default("")
-  brandImageUrl         String   @default("")
-  description           String
-  status                String   @default("draft")
-  researchUrls          String[]
-  brandUrls             String[]
-  destinationUrl        String
-  trackingUrls          String[]
-  geos                  String[]
-  languages             String[]
-  popunderEnabled       Boolean  @default(false)
-  silentFetchEnabled    Boolean  @default(false)
-  autoTriggerDelay      Int      @default(3000)
-  autoRedirectDelay     Int      @default(0)
-  autoTriggerOnInaction Boolean  @default(false)
-  subdomain             String?  @unique
-  metadata              Json?
-  lastResearchedAt      DateTime?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  
-  clickSessions         ClickSession[]
-  conversions           Conversion[]
-  deals                 Deal[]
+// ─── Brands ──────────────────────────────────────────
+
+model Brand {
+  id           String    @id @default(cuid())
+  domain       String    @unique
+  name         String
+  description  String?
+  verticalType String?   // travel, ecommerce, b2b_saas, finance, subscription, other
+  logoUrl      String?
+  metadata     Json?
+  classifiedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  offers             Offer[]
+  verticalClassifications VerticalClassification[]
+  brandData          BrandData[]
 }
 
-model ClickSession {
-  id          String   @id @default(cuid())
-  campaignId  String
-  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  clusterId   String   @default("default")
-  ip          String
-  userAgent   String
-  referrer    String?
-  gclid       String?
-  gbraid      String?
-  wbraid      String?
-  createdAt   DateTime @default(now())
+// ─── Offers ──────────────────────────────────────────
+
+model Offer {
+  id              String   @id @default(cuid())
+  brandId         String
+  brand           Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  name            String
+  slug            String   @unique
+  destinationUrl  String
+  targetGeos      String[]
+  targetLanguages String[]
+  status          String   @default("draft") // draft, active, paused, archived
+  subdomain       String?  @unique
+  redirectDelaySec Int?     // seconds before page auto-redirects to destination (null = no redirect)
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  keywords       Keyword[]
+  generatedPages GeneratedPage[]
+  clickLogs      ClickLog[]
+  conversions    Conversion[]
+  adsCampaigns   GoogleAdsCampaign[]
 }
 
-model Conversion {
-  id          String   @id @default(cuid())
-  campaignId  String
-  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  clusterId   String   @default("default")
-  ip          String?
-  userAgent   String?
-  revenue     Float?
-  currency    String   @default("USD")
-  status      String   @default("pending")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// ─── Keywords ────────────────────────────────────────
+
+model Keyword {
+  id           String    @id @default(cuid())
+  offerId      String
+  offer        Offer     @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  keyword      String
+  cluster      String?
+  intentType   String?   // transactional, comparison, validation, pricing, route_specific, destination_specific, use_case, problem_solution, informational
+  searchVolume Int?
+  classifiedAt DateTime?
+  metadata     Json?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  intentClassifications IntentClassification[]
+  generatedPages        GeneratedPage[]
+  adsKeywords           GoogleAdsKeyword[]
+
+  @@unique([offerId, keyword])
 }
 
-model Lander {
-  id         String   @id @default(cuid())
-  campaignId String
-  title      String
-  body       String
-  cta        String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+// ─── Classifications ─────────────────────────────────
+
+model VerticalClassification {
+  id           String   @id @default(cuid())
+  brandId      String
+  brand        Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  verticalType String
+  confidence   Float
+  reasoning    String?
+  createdAt    DateTime @default(now())
 }
 
-model Deal {
+model IntentClassification {
+  id               String   @id @default(cuid())
+  keywordId        String
+  keyword          Keyword  @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+  intentType       String
+  confidence       Float
+  reasoning        String?
+  detectedEntities Json?
+  createdAt        DateTime @default(now())
+}
+
+// ─── Page Blueprints ─────────────────────────────────
+
+model PageBlueprint {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  verticalType String
+  intentType   String
+  template     Json
+  description  String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  generatedPages GeneratedPage[]
+}
+
+// ─── Generated Pages ─────────────────────────────────
+
+model GeneratedPage {
   id              String    @id @default(cuid())
-  campaignId      String
-  campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  offerId         String
+  offer           Offer     @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  keywordId       String?
+  keyword         Keyword?  @relation(fields: [keywordId], references: [id])
+  blueprintId     String?
+  blueprint       PageBlueprint? @relation(fields: [blueprintId], references: [id])
+  slug            String
   title           String
-  description     String
-  code            String?
-  discountLabel   String    @default("")
-  discountPercent Float?
-  category        String    @default("General")
-  destinationUrl  String    @default("")
-  verified        Boolean   @default(true)
-  featured        Boolean   @default(false)
-  active          Boolean   @default(true)
-  expiresAt       DateTime?
-  usedCount       Int       @default(0)
+  metaDescription String
+  h1              String
+  content         Json      // structured section array
+  status          String    @default("draft") // draft, review, compliant, published, rejected
+  complianceScore Float?
+  publishedAt     DateTime?
+  publishedUrl    String?
+  redirectDelaySec Int?      // page-level override for redirect delay (null = use offer default)
+  metadata        Json?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+
+  complianceLogs ComplianceLog[]
+
+  @@unique([offerId, slug])
+}
+
+// ─── Compliance ──────────────────────────────────────
+
+model ComplianceLog {
+  id          String        @id @default(cuid())
+  pageId      String
+  page        GeneratedPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  scanType    String        // pre_publish, post_publish, manual
+  passed      Boolean
+  violations  Json?
+  autoFixed   Boolean       @default(false)
+  fixedContent Json?
+  createdAt   DateTime      @default(now())
+}
+
+// ─── Click Logs ──────────────────────────────────────
+
+model ClickLog {
+  id             String   @id @default(cuid())
+  offerId        String
+  offer          Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  cluster        String?
+  ip             String?
+  userAgent      String?
+  referer        String?
+  gclid          String?
+  gbraid         String?
+  wbraid         String?
+  destinationUrl String
+  createdAt      DateTime @default(now())
+}
+
+// ─── Conversions ─────────────────────────────────────
+
+model Conversion {
+  id               String    @id @default(cuid())
+  offerId          String
+  offer            Offer     @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  gclid            String?
+  gbraid           String?
+  wbraid           String?
+  conversionAction String?
+  conversionValue  Float?
+  conversionTime   DateTime?
+  uploaded         Boolean   @default(false)
+  uploadedAt       DateTime?
+  metadata         Json?
+  createdAt        DateTime  @default(now())
+}
+
+// ─── Google Ads ──────────────────────────────────────
+
+model GoogleAdsCampaign {
+  id               String   @id @default(cuid())
+  offerId          String
+  offer            Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  googleCampaignId String?
+  name             String
+  status           String   @default("draft")
+  budget           Float?
+  metadata         Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  adGroups GoogleAdsAdGroup[]
+}
+
+model GoogleAdsAdGroup {
+  id              String            @id @default(cuid())
+  campaignId      String
+  campaign        GoogleAdsCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  googleAdGroupId String?
+  name            String
+  cluster         String?
+  metadata        Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  keywords GoogleAdsKeyword[]
+}
+
+model GoogleAdsKeyword {
+  id              String           @id @default(cuid())
+  adGroupId       String
+  adGroup         GoogleAdsAdGroup @relation(fields: [adGroupId], references: [id], onDelete: Cascade)
+  keywordId       String?
+  keyword         Keyword?         @relation(fields: [keywordId], references: [id])
+  googleKeywordId String?
+  matchType       String           @default("exact")
+  status          String           @default("active")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+// ─── Brand Data (scraped / manually entered) ─────────
+
+model BrandData {
+  id          String   @id @default(cuid())
+  brandId     String
+  brand       Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  dataType    String   // pricing, features, pros_cons, company_info, competitors
+  data        Json     // structured data payload
+  source      String?  // url or "manual"
+  scrapedAt   DateTime @default(now())
+  expiresAt   DateTime? // when to refresh
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([brandId, dataType])
 }
