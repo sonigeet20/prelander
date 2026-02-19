@@ -73,7 +73,10 @@ export function PagesManager() {
         
         // Check if this is a microapp page
         if (page.pageType === "microapp") {
-          groups[key].microappPages[page.microappType as keyof typeof groups[key]['microappPages']] = true;
+          const microappType = page.microappType as "flightFinder" | "aiAssistant" | undefined;
+          if (microappType) {
+            groups[key].microappPages[microappType] = true;
+          }
         } else {
           groups[key].pages.push(page);
         }
