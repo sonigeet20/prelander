@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import type { Metadata } from "next";
 import { FlightSearch } from "@/components/micro-apps/FlightSearch";
+import { TrackingPixels } from "@/components/TrackingPixels";
 
 /**
  * Generic Flight Search Landing Page
@@ -118,6 +119,13 @@ export default async function GenericFlightSearchPage({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white text-gray-900">
+      {/* Tracking pixels */}
+      <TrackingPixels 
+        impressionPixelUrl={offer.impressionPixelUrl}
+        clickPixelUrl={offer.clickPixelUrl}
+        conversionPixelUrl={offer.conversionPixelUrl}
+      />
+
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

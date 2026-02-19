@@ -6,6 +6,9 @@ import { OfferKeywordsManager } from "@/components/admin/OfferKeywordsManager";
 interface OfferDetail {
   id: string; name: string; slug: string; status: string; destinationUrl: string;
   redirectDelaySec: number | null;
+  impressionPixelUrl: string | null;
+  clickPixelUrl: string | null;
+  conversionPixelUrl: string | null;
   brand: { name: string; domain: string };
   _count: { keywords: number; generatedPages: number; clickLogs: number };
 }
@@ -20,6 +23,11 @@ export default function AdminOfferDetailPage({ params }: { params: Promise<{ id:
   const [editingDelay, setEditingDelay] = useState(false);
   const [delayValue, setDelayValue] = useState("");
   const [savingDelay, setSavingDelay] = useState(false);
+  const [editingPixels, setEditingPixels] = useState(false);
+  const [impressionPixel, setImpressionPixel] = useState("");
+  const [clickPixel, setClickPixel] = useState("");
+  const [conversionPixel, setConversionPixel] = useState("");
+  const [savingPixels, setSavingPixels] = useState(false);
 
   useEffect(() => {
     params.then((p) => setResolvedId(p.id));
@@ -131,6 +139,110 @@ export default function AdminOfferDetailPage({ params }: { params: Promise<{ id:
           </div>
         )}
         <p className="text-xs text-gray-400 mt-2">After this many seconds, the page auto-redirects to the tracking URL. This is the <strong>global default</strong> for all pages under this offer. Individual pages can override this.</p>
+      </div>
+
+      {/* Tracking Pixels */}
+      <div className="bg-gray-50 rounded-xl border p-4 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-xs font-semibold text-gray-500">📊 Tracking Pixels</div>
+          {!editingPixels && (
+            <button onClick={() => { 
+              setEditingPixels(true); 
+              setImpressionPixel(offer.impressionPixelUrl || "");
+              setClickPixel(offer.clickPixelUrl || "");
+              setConversionPixel(offer.conversionPixelUrl || "");
+            }} className="text-xs text-indigo-600 hover:underline">Edit</button>
+          )}
+        </div>
+        
+        {editingPixels ? (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Impression Pixel (fires on page load)</label>
+              <input 
+                type="url" 
+                value={impressionPixel} 
+                onChange={(e) => setImpressionPixel(e.target.value)} 
+                className="w-full px-3 py-2 border rounded-lg text-sm font-mono" 
+                placeholder="https://tracker.com/impression?id=..." 
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Click Pixel (fires on CTA click)</label>
+              <input 
+                type="url" 
+                value={clickPixel} 
+                onChange={(e) => setClickPixel(e.target.value)} 
+                className="w-full px-3 py-2 border rounded-lg text-sm font-mono" 
+                placeholder="https://tracker.com/click?id=..." 
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Conversion Pixel (fires on conversion)</label>
+              <input 
+                type="url" 
+                value={conversionPixel} 
+                onChange={(e) => setConversionPixel(e.target.value)} 
+                className="w-full px-3 py-2 border rounded-lg text-sm font-mono" 
+                placeholder="https://tracker.com/conversion?id=..." 
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                disabled={savingPixels}
+                onClick={async () => {
+                  setSavingPixels(true);
+                  const res = await fetch(`/api/offers/${offer.id}`, { 
+                    method: "PATCH", 
+                    headers: { "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ 
+                      impressionPixelUrl: impressionPixel.trim() || null,
+                      clickPixelUrl: clickPixel.trim() || null,
+                      conversionPixelUrl: conversionPixel.trim() || null
+                    }) 
+                  });
+                  if (res.ok) { const data = await res.json(); setOffer(data.offer); }
+                  setEditingPixels(false);
+                  setSavingPixels(false);
+                }}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+              >{savingPixels ? "Saving…" : "Save All"}</button>
+              <button onClick={() => setEditingPixels(false)} className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2 text-sm">
+            <div>
+              <span className="text-gray-500 text-xs">Impression:</span> 
+              {offer.impressionPixelUrl ? (
+                <a href={offer.impressionPixelUrl} target="_blank" className="text-indigo-600 hover:underline break-all font-mono ml-2 text-xs">{offer.impressionPixelUrl}</a>
+              ) : (
+                <span className="text-gray-400 ml-2 text-xs">Not set</span>
+              )}
+            </div>
+            <div>
+              <span className="text-gray-500 text-xs">Click:</span> 
+              {offer.clickPixelUrl ? (
+                <a href={offer.clickPixelUrl} target="_blank" className="text-indigo-600 hover:underline break-all font-mono ml-2 text-xs">{offer.clickPixelUrl}</a>
+              ) : (
+                <span className="text-gray-400 ml-2 text-xs">Not set</span>
+              )}
+            </div>
+            <div>
+              <span className="text-gray-500 text-xs">Conversion:</span> 
+              {offer.conversionPixelUrl ? (
+                <a href={offer.conversionPixelUrl} target="_blank" className="text-indigo-600 hover:underline break-all font-mono ml-2 text-xs">{offer.conversionPixelUrl}</a>
+              ) : (
+                <span className="text-gray-400 ml-2 text-xs">Not set</span>
+              )}
+            </div>
+          </div>
+        )}
+        <p className="text-xs text-gray-400 mt-3">
+          These pixels will be automatically injected into all landing pages for this offer. 
+          <strong className="text-amber-600"> ⚠️ Important:</strong> Only use your own first-party tracking URLs (e.g., rightprice.site/api/track), 
+          never third-party affiliate pixels — that would violate Google Ads policies.
+        </p>
       </div>
 
       {/* Keywords + Page generation */}
