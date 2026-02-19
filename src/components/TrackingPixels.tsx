@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 
 interface TrackingPixelsProps {
+  offerId: string;
   impressionPixelUrl?: string | null;
   clickPixelUrl?: string | null;
   conversionPixelUrl?: string | null;
@@ -10,21 +11,28 @@ interface TrackingPixelsProps {
 
 /**
  * Fires tracking pixels based on offer configuration
- * - Impression: fires on page load
- * - Click: fires when user clicks any CTA link (delegates to click handlers)
+ * - Impression: fires on page load (tracked internally + optional custom pixel)
+ * - Click: fires when user clicks any CTA link (via /go/ redirect)
  * - Conversion: manual trigger via window.fireConversionPixel()
  * 
- * Only fires to same-origin URLs for Google Ads compliance.
+ * Only fires custom pixels to same-origin URLs for Google Ads compliance.
  */
-export function TrackingPixels({ impressionPixelUrl, clickPixelUrl, conversionPixelUrl }: TrackingPixelsProps) {
+export function TrackingPixels({ offerId, impressionPixelUrl, clickPixelUrl, conversionPixelUrl }: TrackingPixelsProps) {
   const firedImpression = useRef(false);
   const firedConversion = useRef(false);
 
   useEffect(() => {
-    // Fire impression pixel on mount (page load)
-    if (impressionPixelUrl && !firedImpression.current) {
-      firePixel(impressionPixelUrl, "impression");
+    // Fire impression tracking on mount (page load)
+    if (!firedImpression.current) {
       firedImpression.current = true;
+
+      // ALWAYS track internally for analytics
+      trackImpression(offerId);
+
+      // OPTIONAL: Fire custom impression pixel if configured
+      if (impressionPixelUrl) {
+        firePixel(impressionPixelUrl, "impression");
+      }
     }
 
     // Attach click pixel to all /go/ links
@@ -40,7 +48,7 @@ export function TrackingPixels({ impressionPixelUrl, clickPixelUrl, conversionPi
       document.addEventListener("click", handleClick, true); // capture phase
       return () => document.removeEventListener("click", handleClick, true);
     }
-  }, [impressionPixelUrl, clickPixelUrl]);
+  }, [offerId, impressionPixelUrl, clickPixelUrl]);
 
   useEffect(() => {
     // Expose conversion pixel trigger globally
@@ -55,6 +63,42 @@ export function TrackingPixels({ impressionPixelUrl, clickPixelUrl, conversionPi
   }, [conversionPixelUrl]);
 
   return null; // This component doesn't render anything
+}
+
+/**
+ * Track impression (page view) to our internal analytics API
+ */
+function trackImpression(offerId: string) {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const payload = {
+      type: "impression",
+      offerId,
+      pageUrl: window.location.pathname,
+      gclid: params.get("gclid"),
+      gbraid: params.get("gbraid"),
+      wbraid: params.get("wbraid"),
+    };
+
+    // Use sendBeacon for fire-and-forget tracking
+    if (navigator.sendBeacon) {
+      const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+      const sent = navigator.sendBeacon("/api/analytics", blob);
+      if (sent) {
+        console.log("[TrackingPixels] Impression tracked:", payload);
+      }
+    } else {
+      // Fallback to fetch with keepalive
+      fetch("/api/analytics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        keepalive: true,
+      }).catch(console.error);
+    }
+  } catch (err) {
+    console.error("[TrackingPixels] Failed to track impression:", err);
+  }
 }
 
 /**

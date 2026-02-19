@@ -15,16 +15,31 @@ interface ClickLog {
   createdAt: string;
 }
 
+interface ImpressionLog {
+  id: string;
+  pageUrl: string;
+  ip: string | null;
+  userAgent: string | null;
+  referer: string | null;
+  gclid: string | null;
+  gbraid: string | null;
+  wbraid: string | null;
+  createdAt: string;
+}
+
 interface AnalyticsSummary {
   totalClicks: number;
+  totalImpressions: number;
   totalConversions: number;
   totalOffers: number;
   clicksLast24h: number;
+  impressionsLast24h: number;
 }
 
 interface AnalyticsData {
   summary: AnalyticsSummary;
   recentClicks: ClickLog[];
+  recentImpressions: ImpressionLog[];
 }
 
 export default function AnalyticsPage() {
@@ -74,7 +89,25 @@ export default function AnalyticsPage() {
     );
   }
 
-  // Parse user agents for device breakdown
+  // Calculate CTR
+  const ctr = data.summary.totalImpressions > 0 
+    ? ((data.summary.totalClicks / data.summary.totalImpressions) * 100).toFixed(2)
+    : "0";
+
+  // Parse user agents for device breakdown (for impressions)
+  const impressionDeviceBreakdown = data.recentImpressions.reduce((acc, imp) => {
+    const ua = imp.userAgent?.toLowerCase() || "";
+    let device = "Unknown";
+    if (ua.includes("mobile") || ua.includes("android")) device = "Mobile";
+    else if (ua.includes("tablet") || ua.includes("ipad")) device = "Tablet";
+    else if (ua.includes("bot") || ua.includes("crawler") || ua.includes("spider")) device = "Bot";
+    else if (ua.includes("mac") || ua.includes("windows") || ua.includes("linux")) device = "Desktop";
+    
+    acc[device] = (acc[device] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Parse user agents for device breakdown (for clicks)
   const deviceBreakdown = data.recentClicks.reduce((acc, click) => {
     const ua = click.userAgent?.toLowerCase() || "";
     let device = "Unknown";
@@ -134,11 +167,23 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-6 text-white shadow-lg">
+          <div className="text-4xl mb-2">👁️</div>
+          <div className="text-3xl font-bold">{data.summary.totalImpressions}</div>
+          <div className="text-blue-100 text-sm">Page Visits</div>
+        </div>
+
         <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
           <div className="text-4xl mb-2">👆</div>
           <div className="text-3xl font-bold">{data.summary.totalClicks}</div>
           <div className="text-indigo-100 text-sm">Total Clicks</div>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl p-6 text-white shadow-lg">
+          <div className="text-4xl mb-2">📈</div>
+          <div className="text-3xl font-bold">{ctr}%</div>
+          <div className="text-purple-100 text-sm">Click-Through Rate</div>
         </div>
 
         <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-6 text-white shadow-lg">
@@ -151,12 +196,6 @@ export default function AnalyticsPage() {
           <div className="text-4xl mb-2">🔥</div>
           <div className="text-3xl font-bold">{data.summary.clicksLast24h}</div>
           <div className="text-orange-100 text-sm">Last 24 Hours</div>
-        </div>
-
-        <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl p-6 text-white shadow-lg">
-          <div className="text-4xl mb-2">📊</div>
-          <div className="text-3xl font-bold">{conversionRate}%</div>
-          <div className="text-blue-100 text-sm">Conversion Rate</div>
         </div>
       </div>
 
@@ -260,9 +299,10 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Recent Clicks Table */}
-      <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border shadow-sm overflow-hidden mb-8">
         <div className="px-6 py-4 border-b">
-          <h3 className="font-semibold text-gray-900">Recent Clicks (Last 20)</h3>
+          <h3 className="font-semibold text-gray-900">🖱️ Recent Clicks (Last 20)</h3>
+          <p className="text-sm text-gray-500 mt-1">Outbound clicks to affiliate links</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -301,6 +341,79 @@ export default function AnalyticsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
                       {click.ip || "—"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {device}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 truncate max-w-xs">
+                      {refDisplay}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {hasAd ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          ✓ Yes
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Recent Impressions Table */}
+      <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b">
+          <h3 className="font-semibold text-gray-900">👁️ Recent Page Visits (Last 20)</h3>
+          <p className="text-sm text-gray-500 mt-1">Landing page views (impressions)</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Time
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Page URL
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  IP
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Device
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Referer
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Google Ads
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {data.recentImpressions.map((impression) => {
+                const ua = impression.userAgent?.toLowerCase() || "";
+                const isBot = ua.includes("bot") || ua.includes("crawler") || ua.includes("spider");
+                const device = ua.includes("mobile") ? "📱 Mobile" : ua.includes("tablet") ? "📲 Tablet" : isBot ? "🤖 Bot" : "💻 Desktop";
+                const hasAd = impression.gclid || impression.gbraid || impression.wbraid;
+                const time = new Date(impression.createdAt).toLocaleString();
+                const refDisplay = impression.referer ? new URL(impression.referer).pathname.substring(0, 40) : "—";
+
+                return (
+                  <tr key={impression.id} className={isBot ? "bg-gray-50" : ""}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {time}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
+                      {impression.pageUrl}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                      {impression.ip || "—"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {device}

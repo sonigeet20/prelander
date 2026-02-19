@@ -121,6 +121,7 @@ export default async function GenericFlightSearchPage({
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white text-gray-900">
       {/* Tracking pixels */}
       <TrackingPixels 
+        offerId={offer.id}
         impressionPixelUrl={offer.impressionPixelUrl}
         clickPixelUrl={offer.clickPixelUrl}
         conversionPixelUrl={offer.conversionPixelUrl}

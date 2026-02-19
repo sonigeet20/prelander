@@ -66,6 +66,7 @@ model Offer {
   keywords       Keyword[]
   generatedPages GeneratedPage[]
   clickLogs      ClickLog[]
+  impressionLogs ImpressionLog[]
   conversions    Conversion[]
   adsCampaigns   GoogleAdsCampaign[]
 }
@@ -189,6 +190,22 @@ model ClickLog {
   wbraid         String?
   destinationUrl String
   createdAt      DateTime @default(now())
+}
+
+// ─── Impression Logs ─────────────────────────────────
+
+model ImpressionLog {
+  id        String   @id @default(cuid())
+  offerId   String
+  offer     Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  pageUrl   String   // Which page they visited
+  ip        String?
+  userAgent String?
+  referer   String?
+  gclid     String?
+  gbraid    String?
+  wbraid    String?
+  createdAt DateTime @default(now())
 }
 
 // ─── Conversions ─────────────────────────────────────
