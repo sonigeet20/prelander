@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import type { Metadata } from "next";
 import { FlightSearch } from "@/components/micro-apps/FlightSearch";
 import { TrackingPixels } from "@/components/TrackingPixels";
+import { AdPlatformScripts } from "@/components/AdPlatformScripts";
 
 /**
  * Offer-Specific Flight Finder Landing Page
@@ -136,6 +137,11 @@ export default async function FlightFinderOfferPage({
         impressionPixelUrl={offer.impressionPixelUrl}
         clickPixelUrl={offer.clickPixelUrl}
         conversionPixelUrl={offer.conversionPixelUrl}
+      />
+      <AdPlatformScripts
+        googleAdsConversionId={offer.googleAdsConversionId}
+        googleAdsConversionLabel={offer.googleAdsConversionLabel}
+        metaPixelId={offer.metaPixelId}
       />
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />

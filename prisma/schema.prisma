@@ -59,6 +59,11 @@ model Offer {
   conversionPixelUrl String? // Fired on conversion event
   customPixels       Json?   // Array of additional pixel objects: [{ name, url, trigger }]
   
+  // Ad Platform Conversion Tracking
+  googleAdsConversionId     String? // Google Ads Conversion ID (e.g., AW-123456789)
+  googleAdsConversionLabel  String? // Google Ads Conversion Label (e.g., abc123DEF456)
+  metaPixelId               String? // Meta (Facebook) Pixel ID (e.g., 1234567890123456)
+  
   metadata         Json?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

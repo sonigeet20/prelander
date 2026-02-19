@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import type { Metadata } from "next";
 import { AIAssistant } from "@/components/micro-apps/AIAssistant";
 import { TrackingPixels } from "@/components/TrackingPixels";
+import { AdPlatformScripts } from "@/components/AdPlatformScripts";
 
 /**
  * Offer-Specific AI Assistant Landing Page
@@ -178,6 +179,11 @@ export default async function AIAssistantOfferPage({
         impressionPixelUrl={offer.impressionPixelUrl}
         clickPixelUrl={offer.clickPixelUrl}
         conversionPixelUrl={offer.conversionPixelUrl}
+      />
+      <AdPlatformScripts
+        googleAdsConversionId={offer.googleAdsConversionId}
+        googleAdsConversionLabel={offer.googleAdsConversionLabel}
+        metaPixelId={offer.metaPixelId}
       />
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />

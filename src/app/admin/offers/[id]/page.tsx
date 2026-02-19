@@ -9,6 +9,9 @@ interface OfferDetail {
   impressionPixelUrl: string | null;
   clickPixelUrl: string | null;
   conversionPixelUrl: string | null;
+  googleAdsConversionId: string | null;
+  googleAdsConversionLabel: string | null;
+  metaPixelId: string | null;
   brand: { name: string; domain: string };
   _count: { keywords: number; generatedPages: number; clickLogs: number };
 }
@@ -28,6 +31,11 @@ export default function AdminOfferDetailPage({ params }: { params: Promise<{ id:
   const [clickPixel, setClickPixel] = useState("");
   const [conversionPixel, setConversionPixel] = useState("");
   const [savingPixels, setSavingPixels] = useState(false);
+  const [editingAdPlatforms, setEditingAdPlatforms] = useState(false);
+  const [googleAdsId, setGoogleAdsId] = useState("");
+  const [googleAdsLabel, setGoogleAdsLabel] = useState("");
+  const [metaPixel, setMetaPixel] = useState("");
+  const [savingAdPlatforms, setSavingAdPlatforms] = useState(false);
 
   useEffect(() => {
     params.then((p) => setResolvedId(p.id));
@@ -242,6 +250,134 @@ export default function AdminOfferDetailPage({ params }: { params: Promise<{ id:
           These pixels will be automatically injected into all landing pages for this offer. 
           <strong className="text-amber-600"> ⚠️ Important:</strong> Only use your own first-party tracking URLs (e.g., rightprice.site/api/track), 
           never third-party affiliate pixels — that would violate Google Ads policies.
+        </p>
+      </div>
+
+      {/* Ad Platform Conversion Tracking */}
+      <div className="bg-gray-50 rounded-xl border p-4 mb-6">
+        <div className="flex items-center justify-between mb-1">
+          <div className="text-xs font-semibold text-gray-500">📊 Ad Platform Conversion Tracking</div>
+          {!editingAdPlatforms && (
+            <button onClick={() => { 
+              setEditingAdPlatforms(true); 
+              setGoogleAdsId(offer.googleAdsConversionId || "");
+              setGoogleAdsLabel(offer.googleAdsConversionLabel || "");
+              setMetaPixel(offer.metaPixelId || "");
+            }} className="text-xs text-indigo-600 hover:underline">Edit</button>
+          )}
+        </div>
+        
+        {editingAdPlatforms ? (
+          <div className="space-y-4">
+            <div className="border-b pb-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm font-semibold text-gray-700">🔵 Google Ads Conversion Tracking</span>
+              </div>
+              <div className="space-y-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Conversion ID</label>
+                  <input 
+                    type="text" 
+                    value={googleAdsId} 
+                    onChange={(e) => setGoogleAdsId(e.target.value)} 
+                    className="w-full px-3 py-2 border rounded-lg text-sm font-mono" 
+                    placeholder="AW-123456789" 
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Found in Google Ads → Tools → Conversions → Tag setup</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Conversion Label</label>
+                  <input 
+                    type="text" 
+                    value={googleAdsLabel} 
+                    onChange={(e) => setGoogleAdsLabel(e.target.value)} 
+                    className="w-full px-3 py-2 border rounded-lg text-sm font-mono" 
+                    placeholder="abc123DEF456ghi789" 
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Conversion action label (e.g., "purchase", "lead")</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm font-semibold text-gray-700">🔷 Meta (Facebook) Pixel</span>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Pixel ID</label>
+                <input 
+                  type="text" 
+                  value={metaPixel} 
+                  onChange={(e) => setMetaPixel(e.target.value)} 
+                  className="w-full px-3 py-2 border rounded-lg text-sm font-mono" 
+                  placeholder="1234567890123456" 
+                />
+                <p className="text-xs text-gray-400 mt-1">Found in Meta Events Manager → Data Sources → Pixel ID</p>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                disabled={savingAdPlatforms}
+                onClick={async () => {
+                  setSavingAdPlatforms(true);
+                  const res = await fetch(`/api/offers/${offer.id}`, { 
+                    method: "PATCH", 
+                    headers: { "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ 
+                      googleAdsConversionId: googleAdsId.trim() || null,
+                      googleAdsConversionLabel: googleAdsLabel.trim() || null,
+                      metaPixelId: metaPixel.trim() || null
+                    }) 
+                  });
+                  if (res.ok) { const data = await res.json(); setOffer(data.offer); }
+                  setEditingAdPlatforms(false);
+                  setSavingAdPlatforms(false);
+                }}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+              >{savingAdPlatforms ? "Saving…" : "Save All"}</button>
+              <button onClick={() => setEditingAdPlatforms(false)} className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3 text-sm">
+            <div>
+              <div className="text-xs font-semibold text-gray-600 mb-1">🔵 Google Ads</div>
+              <div className="ml-3 space-y-1">
+                <div>
+                  <span className="text-gray-500 text-xs">Conversion ID:</span> 
+                  {offer.googleAdsConversionId ? (
+                    <span className="text-gray-900 font-mono ml-2 text-xs">{offer.googleAdsConversionId}</span>
+                  ) : (
+                    <span className="text-gray-400 ml-2 text-xs">Not set</span>
+                  )}
+                </div>
+                <div>
+                  <span className="text-gray-500 text-xs">Conversion Label:</span> 
+                  {offer.googleAdsConversionLabel ? (
+                    <span className="text-gray-900 font-mono ml-2 text-xs">{offer.googleAdsConversionLabel}</span>
+                  ) : (
+                    <span className="text-gray-400 ml-2 text-xs">Not set</span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-gray-600 mb-1">🔷 Meta (Facebook) Pixel</div>
+              <div className="ml-3">
+                <span className="text-gray-500 text-xs">Pixel ID:</span> 
+                {offer.metaPixelId ? (
+                  <span className="text-gray-900 font-mono ml-2 text-xs">{offer.metaPixelId}</span>
+                ) : (
+                  <span className="text-gray-400 ml-2 text-xs">Not set</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        <p className="text-xs text-gray-400 mt-3">
+          ✅ <strong>These are SAFE:</strong> Tracking YOUR OWN ad campaigns (Google Ads/Meta Ads) is legitimate and compliant. 
+          These pixels track conversions from your paid traffic, not affiliate cookie stuffing.
         </p>
       </div>
 
