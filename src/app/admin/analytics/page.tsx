@@ -144,94 +144,136 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
-          <p className="text-gray-500 mt-1">Real-time click tracking and engagement metrics</p>
+          <h1 className="text-2xl font-semibold text-gray-900">Analytics</h1>
+          <p className="text-sm text-gray-500 mt-1">Real-time tracking and engagement metrics</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <button
             onClick={fetchAnalytics}
-            className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all text-sm font-medium text-gray-700 shadow-sm"
           >
-            <span>🔄</span> Refresh
+            Refresh
           </button>
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex items-center gap-2 cursor-pointer bg-white border border-gray-200 rounded-lg px-4 py-2 shadow-sm hover:bg-gray-50 transition-all">
             <input
               type="checkbox"
               checked={autoRefresh}
               onChange={(e) => setAutoRefresh(e.target.checked)}
               className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
             />
-            <span className="text-sm text-gray-700">Auto-refresh (10s)</span>
+            <span className="text-sm font-medium text-gray-700">Auto-refresh</span>
+            <span className="text-xs text-gray-400">(10s)</span>
           </label>
         </div>
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-6 text-white shadow-lg">
-          <div className="text-4xl mb-2">👁️</div>
-          <div className="text-3xl font-bold">{data.summary.totalImpressions}</div>
-          <div className="text-blue-100 text-sm">Page Visits</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </div>
+            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Impressions</span>
+          </div>
+          <div className="text-3xl font-semibold text-gray-900 mb-1">{data.summary.totalImpressions.toLocaleString()}</div>
+          <div className="text-xs text-gray-500">Page visits</div>
         </div>
 
-        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
-          <div className="text-4xl mb-2">👆</div>
-          <div className="text-3xl font-bold">{data.summary.totalClicks}</div>
-          <div className="text-indigo-100 text-sm">Total Clicks</div>
+        <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+              </svg>
+            </div>
+            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Clicks</span>
+          </div>
+          <div className="text-3xl font-semibold text-gray-900 mb-1">{data.summary.totalClicks.toLocaleString()}</div>
+          <div className="text-xs text-gray-500">Outbound clicks</div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl p-6 text-white shadow-lg">
-          <div className="text-4xl mb-2">📈</div>
-          <div className="text-3xl font-bold">{ctr}%</div>
-          <div className="text-purple-100 text-sm">Click-Through Rate</div>
+        <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">CTR</span>
+          </div>
+          <div className="text-3xl font-semibold text-gray-900 mb-1">{ctr}%</div>
+          <div className="text-xs text-gray-500">Click-through rate</div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-6 text-white shadow-lg">
-          <div className="text-4xl mb-2">✅</div>
-          <div className="text-3xl font-bold">{data.summary.totalConversions}</div>
-          <div className="text-green-100 text-sm">Conversions</div>
+        <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Conversions</span>
+          </div>
+          <div className="text-3xl font-semibold text-gray-900 mb-1">{data.summary.totalConversions.toLocaleString()}</div>
+          <div className="text-xs text-gray-500">Total conversions</div>
         </div>
 
-        <div className="bg-gradient-to-br from-orange-500 to-red-600 rounded-xl p-6 text-white shadow-lg">
-          <div className="text-4xl mb-2">🔥</div>
-          <div className="text-3xl font-bold">{data.summary.clicksLast24h}</div>
-          <div className="text-orange-100 text-sm">Last 24 Hours</div>
+        <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">24h Activity</span>
+          </div>
+          <div className="text-3xl font-semibold text-gray-900 mb-1">{data.summary.clicksLast24h.toLocaleString()}</div>
+          <div className="text-xs text-gray-500">Clicks last 24h</div>
         </div>
       </div>
 
       {/* Secondary Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-xl border shadow-sm p-6">
-          <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-            <span>👤</span> Real Users
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            Real Users
           </h3>
-          <div className="text-2xl font-bold text-gray-900">{realUsers.length}</div>
-          <div className="text-sm text-gray-500 mt-1">Excluding bots ({data.recentClicks.length - realUsers.length} bot visits)</div>
+          <div className="text-2xl font-semibold text-gray-900">{realUsers.length}</div>
+          <p className="text-xs text-gray-500 mt-1">Excluding bots ({data.recentClicks.length - realUsers.length} bot visits)</p>
         </div>
-
-        <div className="bg-white rounded-xl border shadow-sm p-6">
-          <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-            <span>📡</span> Google Ads Traffic
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+            </svg>
+            Google Ads Traffic
           </h3>
-          <div className="text-2xl font-bold text-gray-900">{hasGoogleAds ? "Detected" : "None"}</div>
-          <div className="text-sm text-gray-500 mt-1">
-            {hasGoogleAds ? "GCLID/GBRAID present" : "No ad click IDs found"}
-          </div>
+          <div className="text-2xl font-semibold text-gray-900">{hasGoogleAds ? "Active" : "None"}</div>
+          <p className="text-xs text-gray-500 mt-1">{hasGoogleAds ? "Ad click IDs detected" : "No ad click IDs found"}</p>
         </div>
-
-        <div className="bg-white rounded-xl border shadow-sm p-6">
-          <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-            <span>🎯</span> Active Offers
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            Active Offers
           </h3>
-          <div className="text-2xl font-bold text-gray-900">{data.summary.totalOffers}</div>
-          <div className="text-sm text-gray-500 mt-1">Configured in system</div>
+          <div className="text-2xl font-semibold text-gray-900">{data.summary.totalOffers}</div>
+          <p className="text-xs text-gray-500 mt-1">Configured in system</p>
         </div>
       </div>
 
-      {/* Device Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-xl border shadow-sm p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Device Breakdown</h3>
+      {/* Device & Referrer Breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
+          <h3 className="text-sm font-semibold text-gray-700 mb-4">Device Breakdown</h3>
           <div className="space-y-3">
             {Object.entries(deviceBreakdown)
               .sort(([, a], [, b]) => b - a)
