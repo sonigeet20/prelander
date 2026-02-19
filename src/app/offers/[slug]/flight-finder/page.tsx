@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import type { Metadata } from "next";
-import { FlightSearch } from "@/components/micro-apps/FlightSearch";
+import { FlightFinderWrapper } from "@/components/FlightFinderWrapper";
 import { TrackingPixels } from "@/components/TrackingPixels";
 import { AdPlatformScripts } from "@/components/AdPlatformScripts";
 
@@ -210,7 +210,7 @@ export default async function FlightFinderOfferPage({
 
         {/* ─── Flight Search Micro-App (FIRST after headline) ─── */}
         <div className="mb-12">
-          <FlightSearch
+          <FlightFinderWrapper
             brandName={brandName}
             trackingHref={trackingHref}
             brandDomain={brandDomain}

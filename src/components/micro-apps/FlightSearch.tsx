@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { AIRPORTS } from "@/lib/airports";
 
 /**
@@ -73,19 +73,29 @@ function getDefaultReturn() {
 export function FlightSearch({
   brandName,
   trackingHref,
+  initialFromCode,
+  initialToCode,
+  initialDepart,
+  initialReturn,
+  initialPax,
 }: {
   brandName: string;
   trackingHref: string;
   brandDomain: string;
+  initialFromCode?: string;
+  initialToCode?: string;
+  initialDepart?: string;
+  initialReturn?: string;
+  initialPax?: number;
 }) {
   // Search form state
   const [fromQ, setFromQ] = useState("");
   const [toQ, setToQ] = useState("");
-  const [fromCode, setFromCode] = useState("");
-  const [toCode, setToCode] = useState("");
-  const [depart, setDepart] = useState(getDefaultDepart());
-  const [ret, setRet] = useState(getDefaultReturn());
-  const [pax, setPax] = useState(1);
+  const [fromCode, setFromCode] = useState(initialFromCode || "");
+  const [toCode, setToCode] = useState(initialToCode || "");
+  const [depart, setDepart] = useState(initialDepart || getDefaultDepart());
+  const [ret, setRet] = useState(initialReturn || getDefaultReturn());
+  const [pax, setPax] = useState(initialPax || 1);
   const [tripType, setTripType] = useState<"rt" | "ow">("rt");
   const [cabin, setCabin] = useState("ECONOMY");
   const [fromSug, setFromSug] = useState<typeof AIRPORTS>([]);
@@ -99,6 +109,22 @@ export function FlightSearch({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"price" | "duration" | "stops">("price");
   const [dataSource, setDataSource] = useState<string>("");
+
+  // Populate airport names from codes on mount
+  useEffect(() => {
+    if (initialFromCode) {
+      const airport = AIRPORTS.find((a) => a.code.toUpperCase() === initialFromCode.toUpperCase());
+      if (airport) {
+        setFromQ(`${airport.city}, ${airport.country} (${airport.code})`);
+      }
+    }
+    if (initialToCode) {
+      const airport = AIRPORTS.find((a) => a.code.toUpperCase() === initialToCode.toUpperCase());
+      if (airport) {
+        setToQ(`${airport.city}, ${airport.country} (${airport.code})`);
+      }
+    }
+  }, [initialFromCode, initialToCode]);
 
   const filter = (q: string) => {
     if (q.length < 1) return [];

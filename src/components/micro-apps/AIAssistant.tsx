@@ -118,17 +118,20 @@ export function AIAssistant({
   trackingHref,
   brandDomain,
   vertical,
+  initialQuery,
 }: {
   brandName: string;
   trackingHref: string;
   brandDomain: string;
   vertical: string;
+  initialQuery?: string;
 }) {
   const config = VERTICAL_STARTERS[vertical] || DEFAULT_CONFIG;
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasAutoQueried, setHasAutoQueried] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -136,11 +139,7 @@ export function AIAssistant({
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
-
-  const sendMessage = async (text: string) => {
+  const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || isStreaming) return;
 
     const userMessage: Message = { role: "user", content: text.trim() };
@@ -194,7 +193,19 @@ export function AIAssistant({
       setIsStreaming(false);
       inputRef.current?.focus();
     }
-  };
+  }, [isStreaming, messages, vertical, brandName]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
+
+  // Auto-submit initial query if provided
+  useEffect(() => {
+    if (initialQuery && !hasAutoQueried) {
+      setHasAutoQueried(true);
+      sendMessage(initialQuery);
+    }
+  }, [initialQuery, hasAutoQueried, sendMessage]);
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200/70 shadow-lg overflow-hidden">

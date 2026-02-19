@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import type { Metadata } from "next";
-import { AIAssistant } from "@/components/micro-apps/AIAssistant";
+import { AIAssistantWrapper } from "@/components/AIAssistantWrapper";
 import { TrackingPixels } from "@/components/TrackingPixels";
 import { AdPlatformScripts } from "@/components/AdPlatformScripts";
 
@@ -272,7 +272,7 @@ export default async function GenericAIAssistantPage({
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pb-16">
         {/* ─── AI Assistant Micro-App (FIRST after headline) ─── */}
         <div className="mb-12">
-          <AIAssistant
+          <AIAssistantWrapper
             brandName={brandName}
             trackingHref={trackingHref}
             brandDomain={brandDomain}
