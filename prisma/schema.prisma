@@ -41,20 +41,27 @@ model Brand {
 // ─── Offers ──────────────────────────────────────────
 
 model Offer {
-  id              String   @id @default(cuid())
-  brandId         String
-  brand           Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  name            String
-  slug            String   @unique
-  destinationUrl  String
-  targetGeos      String[]
-  targetLanguages String[]
-  status          String   @default("draft") // draft, active, paused, archived
-  subdomain       String?  @unique
+  id               String   @id @default(cuid())
+  brandId          String
+  brand            Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  name             String
+  slug             String   @unique
+  destinationUrl   String
+  targetGeos       String[]
+  targetLanguages  String[]
+  status           String   @default("draft") // draft, active, paused, archived
+  subdomain        String?  @unique
   redirectDelaySec Int?     // seconds before page auto-redirects to destination (null = no redirect)
-  metadata        Json?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  
+  // Tracking pixels - injected into all landing pages for this offer
+  impressionPixelUrl String? // Fired on page load (e.g., 1x1.gif, impression tracker)
+  clickPixelUrl      String? // Fired on CTA click (before /go redirect)
+  conversionPixelUrl String? // Fired on conversion event
+  customPixels       Json?   // Array of additional pixel objects: [{ name, url, trigger }]
+  
+  metadata         Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   keywords       Keyword[]
   generatedPages GeneratedPage[]
