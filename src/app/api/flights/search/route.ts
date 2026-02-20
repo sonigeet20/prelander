@@ -2,15 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { searchFlights } from "@/lib/flight-scraper";
 
 /**
- * Flight Search API — Real-time scraper.
+ * Flight Search API — Real-time via Bright Data SERP proxy.
  *
  * POST /api/flights/search
  * Body: { origin, destination, departDate, returnDate?, adults, cabinClass }
  *
- * Scrapes live flight data from Google Flights & Skyscanner.
- * No API keys needed, no monthly quota, real prices.
- * Forwards the visitor's IP so our server doesn't get flagged.
+ * Uses Bright Data residential proxies to fetch Google Flights data.
+ * Results cached for 2 hours to minimize API usage.
  */
+
+// Bright Data SERP requests take 7-25s — extend Vercel timeout
+export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
   try {

@@ -1,14 +1,15 @@
 /**
  * Flight Scraper — Real-time live flight data from Google Flights.
  *
- * Scrapes Google Flights search page HTML and parses the aria-label
- * attributes that contain full flight details (price, airline, times,
- * stops, layovers, duration).
+ * Uses Bright Data SERP API with residential proxies to fetch
+ * Google Flights search pages, then parses aria-label attributes
+ * that contain full flight details (price, airline, times, stops,
+ * layovers, duration).
  *
- * • No API keys — completely free
- * • No monthly quota — unlimited
- * • Real, live prices from airlines
- * • Forwards visitor's IP to avoid server-side blocking
+ * • Bright Data SERP API — residential proxy, no CAPTCHA
+ * • Protobuf-encoded tfs URL — supports any IATA airport code
+ * • Smart caching — same route reuses results for 2 hours
+ * • Fallback — direct fetch if no API key (dev/testing)
  *
  * Used by both /api/flights/search (widget) and AI assistant.
  */
@@ -66,6 +67,10 @@ export interface FlightSearchResult {
   searchedAt: string;
   source: string;
   error?: string;
+  suggestedLinks?: {
+    googleFlights: string;
+    skyscanner: string;
+  };
 }
 
 // ─── Airline code lookup ────────────────────────────────────────────
@@ -105,12 +110,13 @@ const AIRLINE_TO_CODE: Record<string, string> = {
   "akasa air": "QP", "batik air": "ID",
 };
 
-// ─── In-memory cache (30 min TTL) ──────────────────────────────────
-// Same route + date + cabin → cached result for 30 minutes.
-// 1,000 users searching DEL→DXB = 1 Google request, not 1,000.
+// ─── In-memory cache (2 hour TTL) ──────────────────────────────────
+// Same route + date + cabin → cached result for 2 hours.
+// With 100k visitors/week and 2hr cache, ~168 unique slots/route/week.
+// Most popular routes stay cached, Bright Data credits are preserved.
 
-const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
-const MAX_CACHE_ENTRIES = 200; // prevent unbounded memory growth
+const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
+const MAX_CACHE_ENTRIES = 500; // allow more entries with longer TTL
 
 interface CacheEntry {
   result: FlightSearchResult;
@@ -149,20 +155,6 @@ function setCache(key: string, result: FlightSearchResult): void {
   flightCache.set(key, { result, expiresAt: Date.now() + CACHE_TTL_MS });
 }
 
-// ─── Random user agents for rotation ────────────────────────────────
-
-const USER_AGENTS = [
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0",
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Safari/605.1.15",
-  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-];
-
-function randomUA(): string {
-  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
-}
-
 // ─── Build Skyscanner tracking deep link ────────────────────────────
 
 export function buildSkyscannerLink(params: FlightSearchParams): string {
@@ -175,25 +167,71 @@ export function buildSkyscannerLink(params: FlightSearchParams): string {
   return url;
 }
 
-// ─── Build Google Flights search URL ────────────────────────────────
+// ─── Protobuf encoder for Google Flights tfs parameter ──────────────
+// Google Flights uses a base64-encoded protobuf in the `tfs` query param.
+// Each flight leg encodes: date, origin (IATA type=1), destination (IATA type=1).
+
+function writeVarint(val: number): number[] {
+  const result: number[] = [];
+  while (val > 0x7f) {
+    result.push((val & 0x7f) | 0x80);
+    val >>>= 7;
+  }
+  result.push(val);
+  return result;
+}
+
+function writeField(fieldNum: number, wireType: number, data: number[]): number[] {
+  return [...writeVarint((fieldNum << 3) | wireType), ...data];
+}
+
+function writeString(fieldNum: number, s: string): number[] {
+  const encoded = Array.from(new TextEncoder().encode(s));
+  return writeField(fieldNum, 2, [...writeVarint(encoded.length), ...encoded]);
+}
+
+function writeVarintField(fieldNum: number, val: number): number[] {
+  return writeField(fieldNum, 0, writeVarint(val));
+}
+
+function writeMessage(fieldNum: number, msgBytes: number[]): number[] {
+  return writeField(fieldNum, 2, [...writeVarint(msgBytes.length), ...msgBytes]);
+}
+
+function buildLocationIata(iataCode: string): number[] {
+  return [...writeVarintField(1, 1), ...writeString(2, iataCode.toUpperCase())];
+}
+
+function buildFlightLeg(date: string, originIata: string, destIata: string): number[] {
+  return [
+    ...writeString(2, date),
+    ...writeMessage(13, buildLocationIata(originIata)),
+    ...writeMessage(14, buildLocationIata(destIata)),
+  ];
+}
+
+function buildTfsParam(params: FlightSearchParams): string {
+  const { origin, destination, departDate, returnDate } = params;
+  const bytes: number[] = [
+    ...writeVarintField(1, 1),                            // trip type: 1 = round/one-way
+    ...writeVarintField(2, returnDate ? 2 : 1),           // 2 = round trip, 1 = one way
+    ...writeMessage(3, buildFlightLeg(departDate, origin, destination)),
+  ];
+  if (returnDate) {
+    bytes.push(...writeMessage(3, buildFlightLeg(returnDate, destination, origin)));
+  }
+  // Base64url encode (no padding)
+  const uint8 = new Uint8Array(bytes);
+  let b64 = btoa(String.fromCharCode(...uint8));
+  b64 = b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return b64;
+}
+
+// ─── Build Google Flights URL with tfs protobuf ─────────────────────
 
 function buildGoogleFlightsUrl(params: FlightSearchParams): string {
-  const { origin, destination, departDate, returnDate, adults = 1, cabinClass = "ECONOMY" } = params;
-
-  // Google Flights accepts a natural-language ?q= parameter
-  let q = `Flights to ${destination.toUpperCase()} from ${origin.toUpperCase()} on ${departDate}`;
-  if (returnDate) q += ` return ${returnDate}`;
-  if (adults > 1) q += ` ${adults} passengers`;
-
-  // Map cabin class
-  const cabinMap: Record<string, string> = {
-    ECONOMY: "economy", PREMIUM_ECONOMY: "premium+economy",
-    BUSINESS: "business", FIRST: "first+class",
-  };
-  const cabinStr = cabinMap[cabinClass.toUpperCase()] || "economy";
-  if (cabinStr !== "economy") q += ` ${cabinStr}`;
-
-  return `https://www.google.com/travel/flights?q=${encodeURIComponent(q)}&curr=USD&gl=us&hl=en`;
+  const tfs = buildTfsParam(params);
+  return `https://www.google.com/travel/flights?hl=en&gl=us&curr=USD&tfs=${tfs}`;
 }
 
 // ─── Parse a single flight from aria-label ──────────────────────────
@@ -378,6 +416,34 @@ function toFlightResult(
   };
 }
 
+// ─── Fetch HTML via Bright Data SERP API ────────────────────────────
+
+async function fetchViaBrightData(googleUrl: string): Promise<string> {
+  const apiKey = process.env.BRIGHTDATA_API_KEY;
+  if (!apiKey) {
+    throw new Error("BRIGHTDATA_API_KEY not set");
+  }
+
+  const res = await fetch("https://api.brightdata.com/request", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      zone: "serp",
+      url: googleUrl,
+      format: "raw",
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Bright Data returned HTTP ${res.status}`);
+  }
+
+  return res.text();
+}
+
 // ─── Main search function ───────────────────────────────────────────
 
 export async function searchFlights(
@@ -404,41 +470,25 @@ export async function searchFlights(
   }
   console.log("[flight-scraper] Cache MISS for", cacheKey);
 
-  const MAX_RETRIES = 2;
+  const useBrightData = !!process.env.BRIGHTDATA_API_KEY;
 
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    const headers: Record<string, string> = {
-      "User-Agent": randomUA(),
-      Accept:
-        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-      "Accept-Language": "en-US,en;q=0.9",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-      "Upgrade-Insecure-Requests": "1",
-      "Sec-Fetch-Dest": "document",
-      "Sec-Fetch-Mode": "navigate",
-      "Sec-Fetch-Site": "none",
-      "Sec-Fetch-User": "?1",
-    };
+  try {
+    const url = buildGoogleFlightsUrl(params);
+    console.log("[flight-scraper] Fetching via", useBrightData ? "Bright Data" : "direct", ":", url);
 
-    // Forward client IP if available
-    if (params.clientIp) {
-      headers["X-Forwarded-For"] = params.clientIp;
-    }
-
-    try {
-      const url = buildGoogleFlightsUrl(params);
-      console.log(`[flight-scraper] Attempt ${attempt}/${MAX_RETRIES} — Fetching:`, url);
-
-      const res = await fetch(url, { headers, redirect: "follow" });
-
+    let html: string;
+    if (useBrightData) {
+      html = await fetchViaBrightData(url);
+    } else {
+      // Direct fetch fallback (works in dev, blocked in production)
+      const res = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+        redirect: "follow",
+      });
       if (!res.ok) {
-        console.error("[flight-scraper] Google Flights returned", res.status);
-        if (attempt < MAX_RETRIES) {
-          await new Promise((r) => setTimeout(r, 1000 + Math.random() * 1000));
-          continue;
-        }
         return {
           flights: [],
           count: 0,
@@ -447,120 +497,108 @@ export async function searchFlights(
           error: `Google Flights returned HTTP ${res.status}`,
         };
       }
+      html = await res.text();
+    }
 
-      const html = await res.text();
-      console.log("[flight-scraper] Received HTML:", html.length, "bytes");
+    console.log("[flight-scraper] Received HTML:", html.length, "bytes");
 
-      // Extract all flight aria-labels
-      // Pattern: aria-label="From {price} {currency} {trip_type} total. ..."
-      const flightLabelRegex =
-        /aria-label="(From \d[\d,]*\s+.+?Select flight)"/g;
-      const labels: string[] = [];
-      let match;
-      while ((match = flightLabelRegex.exec(html)) !== null) {
-        labels.push(match[1]);
-      }
+    // Extract all flight aria-labels
+    const flightLabelRegex = /aria-label="(From \d[\d,]*\s+.+?Select flight)"/g;
+    const labels: string[] = [];
+    let match;
+    while ((match = flightLabelRegex.exec(html)) !== null) {
+      labels.push(match[1]);
+    }
 
-      console.log("[flight-scraper] Found", labels.length, "flight labels");
+    console.log("[flight-scraper] Found", labels.length, "flight labels");
 
-      if (labels.length === 0) {
-        // Detect actual CAPTCHA / blocking (not cookie consent banners)
-        const htmlLower = html.toLowerCase();
-        const isCaptcha =
-          htmlLower.includes("recaptcha") ||
-          htmlLower.includes("id=\"captcha\"") ||
-          htmlLower.includes("class=\"captcha\"") ||
-          htmlLower.includes("solve this captcha");
-        const isBlocked =
-          htmlLower.includes("unusual traffic") ||
-          htmlLower.includes("automated queries") ||
-          htmlLower.includes("systems have detected");
+    if (labels.length === 0) {
+      const htmlLower = html.toLowerCase();
+      const isCaptcha =
+        htmlLower.includes("recaptcha") ||
+        htmlLower.includes("id=\"captcha\"") ||
+        htmlLower.includes("class=\"captcha\"");
+      const isBlocked =
+        htmlLower.includes("unusual traffic") ||
+        htmlLower.includes("automated queries") ||
+        htmlLower.includes("systems have detected");
+      const isConsent = htmlLower.includes("consent.google");
 
-        console.warn(
-          `[flight-scraper] Attempt ${attempt}: No flights found.`,
-          isCaptcha ? "CAPTCHA detected." : "",
-          isBlocked ? "Blocked." : "",
-          "HTML length:", html.length,
-          "Sample:", html.substring(0, 500).replace(/\n/g, " ").substring(0, 200)
-        );
+      console.warn(
+        "[flight-scraper] No flights found.",
+        isCaptcha ? "CAPTCHA." : "",
+        isBlocked ? "Blocked." : "",
+        isConsent ? "Consent redirect." : "",
+        "HTML length:", html.length
+      );
 
-        if ((isCaptcha || isBlocked) && attempt < MAX_RETRIES) {
-          // Retry with different UA after a delay
-          console.log("[flight-scraper] Retrying with different User-Agent...");
-          await new Promise((r) => setTimeout(r, 1500 + Math.random() * 1500));
-          continue;
-        }
-
-        if (isCaptcha || isBlocked) {
-          return {
-            flights: [],
-            count: 0,
-            searchedAt: new Date().toISOString(),
-            source: "error",
-            error: "Search temporarily limited. Please try again in a moment.",
-          };
-        }
-
-        // No blocking — route genuinely has no flights
+      if (isCaptcha || isBlocked || isConsent) {
         return {
           flights: [],
           count: 0,
           searchedAt: new Date().toISOString(),
-          source: "no-results",
-          error: "No flights found for this route. Try different dates or nearby airports.",
+          source: "error",
+          error: "Search temporarily limited. Please try again in a moment.",
+          suggestedLinks: {
+            googleFlights: url,
+            skyscanner: buildSkyscannerLink(params),
+          },
         };
       }
 
-      // Parse each label into a FlightResult
-      const flights: FlightResult[] = [];
-      for (let i = 0; i < labels.length && flights.length < 10; i++) {
-        const parsed = parseFlightLabel(labels[i]);
-        if (parsed) {
-          flights.push(toFlightResult(parsed, i, params));
-        }
-      }
-
-      // Sort by price
-      flights.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
-
-      const result: FlightSearchResult = {
-        flights: flights.slice(0, 8),
-        count: Math.min(flights.length, 8),
-        searchedAt: new Date().toISOString(),
-        source: "google-flights",
-      };
-
-      // ─── Store in cache ───────────────────────────────────────────
-      if (result.count > 0) {
-        setCache(cacheKey, result);
-        console.log("[flight-scraper] Cached", result.count, "flights for", cacheKey);
-      }
-
-      return result;
-    } catch (err) {
-      console.error(`[flight-scraper] Attempt ${attempt} error:`, err);
-      if (attempt < MAX_RETRIES) {
-        await new Promise((r) => setTimeout(r, 1000 + Math.random() * 1000));
-        continue;
-      }
       return {
         flights: [],
         count: 0,
         searchedAt: new Date().toISOString(),
-        source: "error",
-        error: "Flight search failed. Please try again.",
+        source: "no-results",
+        error: "No flights found for this route. Try different dates or nearby airports.",
+        suggestedLinks: {
+          googleFlights: url,
+          skyscanner: buildSkyscannerLink(params),
+        },
       };
     }
-  }
 
-  // Should not reach here, but safety fallback
-  return {
-    flights: [],
-    count: 0,
-    searchedAt: new Date().toISOString(),
-    source: "error",
-    error: "Flight search failed after retries.",
-  };
+    // Parse each label into a FlightResult
+    const flights: FlightResult[] = [];
+    for (let i = 0; i < labels.length && flights.length < 10; i++) {
+      const parsed = parseFlightLabel(labels[i]);
+      if (parsed) {
+        flights.push(toFlightResult(parsed, i, params));
+      }
+    }
+
+    // Sort by price
+    flights.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+
+    const result: FlightSearchResult = {
+      flights: flights.slice(0, 8),
+      count: Math.min(flights.length, 8),
+      searchedAt: new Date().toISOString(),
+      source: useBrightData ? "google-flights" : "google-flights-direct",
+    };
+
+    // ─── Store in cache ───────────────────────────────────────────
+    if (result.count > 0) {
+      setCache(cacheKey, result);
+      console.log("[flight-scraper] Cached", result.count, "flights for", cacheKey);
+    }
+
+    return result;
+  } catch (err) {
+    console.error("[flight-scraper] Error:", err);
+    return {
+      flights: [],
+      count: 0,
+      searchedAt: new Date().toISOString(),
+      source: "error",
+      error: "Flight search failed. Please try again.",
+      suggestedLinks: {
+        googleFlights: buildGoogleFlightsUrl(params),
+        skyscanner: buildSkyscannerLink(params),
+      },
+    };
+  }
 }
 
 // ─── Simplified output for AI assistant ─────────────────────────────
