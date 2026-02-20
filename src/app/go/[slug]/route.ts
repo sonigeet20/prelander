@@ -30,22 +30,45 @@ export async function GET(
     return NextResponse.redirect(new URL("/", request.url), 302);
   }
 
-  // Log the click (non-blocking — don't slow down the redirect)
+  // Log the click (await to ensure serverless flushes the write)
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const ua = request.headers.get("user-agent") || "";
   const referer = request.headers.get("referer") || "";
 
-  // Fire-and-forget click log — no await so redirect is instant
-  prisma.clickLog.create({
-    data: {
-      offerId: offer.id,
-      cluster: "cta",
-      ip,
-      userAgent: ua,
-      referer,
-      destinationUrl: offer.destinationUrl,
-    },
-  }).catch(() => {});
+  // Capture ad click IDs from query params or referrer
+  const currentUrl = new URL(request.url);
+  let gclid = currentUrl.searchParams.get("gclid");
+  let gbraid = currentUrl.searchParams.get("gbraid");
+  let wbraid = currentUrl.searchParams.get("wbraid");
+
+  if ((!gclid || !gbraid || !wbraid) && referer) {
+    try {
+      const refUrl = new URL(referer);
+      gclid = gclid || refUrl.searchParams.get("gclid");
+      gbraid = gbraid || refUrl.searchParams.get("gbraid");
+      wbraid = wbraid || refUrl.searchParams.get("wbraid");
+    } catch {
+      // Ignore invalid referrer URLs
+    }
+  }
+
+  try {
+    await prisma.clickLog.create({
+      data: {
+        offerId: offer.id,
+        cluster: "cta",
+        ip,
+        userAgent: ua,
+        referer,
+        gclid,
+        gbraid,
+        wbraid,
+        destinationUrl: offer.destinationUrl,
+      },
+    });
+  } catch {
+    // Swallow logging failures to avoid blocking redirect
+  }
 
   // 302 redirect to the actual destination
   return NextResponse.redirect(offer.destinationUrl, 302);
