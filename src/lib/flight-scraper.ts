@@ -1,13 +1,14 @@
 /**
- * Flight Scraper — Real-time live flight data from Google Flights.
+ * Flight Scraper — Real-time live flight data via Google Search SERP.
  *
- * Uses Bright Data SERP API with residential proxies to fetch
- * Google Flights search pages, then parses aria-label attributes
- * that contain full flight details (price, airline, times, stops,
- * layovers, duration).
+ * Uses Bright Data SERP API to fetch Google Search results for flight
+ * queries. Google Search natively includes flight-card widgets with
+ * airline, duration, stops, and prices — all rendered server-side,
+ * no JavaScript execution required.
  *
- * • Bright Data SERP API — residential proxy, no CAPTCHA
- * • Protobuf-encoded tfs URL — supports any IATA airport code
+ * • Bright Data SERP API — residential proxy, no CAPTCHA, fast (3-6s)
+ * • Google Search flight cards — no JS rendering needed
+ * • Works for both one-way and round-trip searches
  * • Smart caching — same route reuses results for 2 hours
  * • Fallback — direct fetch if no API key (dev/testing)
  *
@@ -108,6 +109,11 @@ const AIRLINE_TO_CODE: Record<string, string> = {
   "sun country": "SY", "allegiant": "G4",
   "goair": "G8", "go first": "G8",
   "akasa air": "QP", "batik air": "ID",
+  "icelandair": "FI", "american": "AA",
+  "hawaiian airlines": "HA", "copa airlines": "CM",
+  "aer lingus": "EI", "brussels airlines": "SN",
+  "norwegian": "DY", "condor": "DE",
+  "play": "OG", "azul": "AD",
 };
 
 // ─── In-memory cache (2 hour TTL) ──────────────────────────────────
@@ -167,258 +173,182 @@ export function buildSkyscannerLink(params: FlightSearchParams): string {
   return url;
 }
 
-// ─── Protobuf encoder for Google Flights tfs parameter ──────────────
-// Google Flights uses a base64-encoded protobuf in the `tfs` query param.
-// Each flight leg encodes: date, origin (IATA type=1), destination (IATA type=1).
-
-function writeVarint(val: number): number[] {
-  const result: number[] = [];
-  while (val > 0x7f) {
-    result.push((val & 0x7f) | 0x80);
-    val >>>= 7;
-  }
-  result.push(val);
-  return result;
-}
-
-function writeField(fieldNum: number, wireType: number, data: number[]): number[] {
-  return [...writeVarint((fieldNum << 3) | wireType), ...data];
-}
-
-function writeString(fieldNum: number, s: string): number[] {
-  const encoded = Array.from(new TextEncoder().encode(s));
-  return writeField(fieldNum, 2, [...writeVarint(encoded.length), ...encoded]);
-}
-
-function writeVarintField(fieldNum: number, val: number): number[] {
-  return writeField(fieldNum, 0, writeVarint(val));
-}
-
-function writeMessage(fieldNum: number, msgBytes: number[]): number[] {
-  return writeField(fieldNum, 2, [...writeVarint(msgBytes.length), ...msgBytes]);
-}
-
-function buildLocationIata(iataCode: string): number[] {
-  return [...writeVarintField(1, 1), ...writeString(2, iataCode.toUpperCase())];
-}
-
-function buildFlightLeg(date: string, originIata: string, destIata: string): number[] {
-  return [
-    ...writeString(2, date),
-    ...writeMessage(13, buildLocationIata(originIata)),
-    ...writeMessage(14, buildLocationIata(destIata)),
-  ];
-}
-
-function buildTfsParam(params: FlightSearchParams): string {
-  const { origin, destination, departDate, returnDate } = params;
-  const bytes: number[] = [
-    ...writeVarintField(1, 1),                            // trip type: 1 = round/one-way
-    ...writeVarintField(2, returnDate ? 2 : 1),           // 2 = round trip, 1 = one way
-    ...writeMessage(3, buildFlightLeg(departDate, origin, destination)),
-  ];
-  if (returnDate) {
-    bytes.push(...writeMessage(3, buildFlightLeg(returnDate, destination, origin)));
-  }
-  // Base64url encode (no padding)
-  const uint8 = new Uint8Array(bytes);
-  let b64 = btoa(String.fromCharCode(...uint8));
-  b64 = b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  return b64;
-}
-
-// ─── Build Google Flights URL with tfs protobuf ─────────────────────
+// ─── Build Google Flights deep link (for users to click) ────────────
 
 function buildGoogleFlightsUrl(params: FlightSearchParams): string {
-  const tfs = buildTfsParam(params);
-  return `https://www.google.com/travel/flights?hl=en&gl=us&curr=USD&tfs=${tfs}`;
+  const { origin, destination, departDate, returnDate } = params;
+  const q = returnDate
+    ? `flights from ${origin} to ${destination} ${departDate} to ${returnDate}`
+    : `flights from ${origin} to ${destination} ${departDate}`;
+  return `https://www.google.com/travel/flights?q=${encodeURIComponent(q)}&curr=USD&hl=en&gl=us`;
 }
 
-// ─── Parse a single flight from aria-label ──────────────────────────
+// ─── Build Google Search URL for SERP API ───────────────────────────
+// Google Search returns flight-card widgets with airline, duration,
+// stops, and price — all server-side rendered, no JS needed.
 
-interface ParsedFlight {
+function buildGoogleSearchUrl(params: FlightSearchParams): string {
+  const { origin, destination, departDate, returnDate } = params;
+  // Format date for natural language: "march 8 2026"
+  const fmtDate = (iso: string): string => {
+    const d = new Date(iso + "T00:00:00Z");
+    const months = [
+      "january", "february", "march", "april", "may", "june",
+      "july", "august", "september", "october", "november", "december",
+    ];
+    return `${months[d.getUTCMonth()]} ${d.getUTCDate()} ${d.getUTCFullYear()}`;
+  };
+
+  let q: string;
+  if (returnDate) {
+    q = `flights ${origin} to ${destination} ${fmtDate(departDate)} to ${fmtDate(returnDate)}`;
+  } else {
+    q = `flights ${origin} to ${destination} ${fmtDate(departDate)}`;
+  }
+  return `https://www.google.com/search?q=${encodeURIComponent(q)}&hl=en&gl=us`;
+}
+
+// ─── Parse flight cards from Google Search SERP HTML ────────────────
+// Google Search flight widgets follow a consistent text pattern:
+//   "Airline Duration Connecting|Nonstop from $Price"
+// We strip HTML tags first, then match this pattern.
+
+interface SerpFlightCard {
+  airline: string;
+  duration: string;
+  stopsType: string; // "Nonstop" or "Connecting"
   price: number;
   currency: string;
-  currencyLabel: string;
-  airlines: string[];
-  departTime: string;
-  arriveTime: string;
-  departDate: string;
-  arriveDate: string;
-  duration: string;
-  stops: number;
-  stopDescription: string;
-  layovers: { duration: string; airport: string; city: string }[];
-  departAirport: string;
-  arriveAirport: string;
-  tripType: string;
 }
 
-function parseFlightLabel(label: string): ParsedFlight | null {
-  try {
-    // Example:
-    // "From 301 US dollars round trip total. 1 stop flight with Oman Air.
-    //  Leaves Indira Gandhi International Airport at 3:20 PM on Wednesday, March 4
-    //  and arrives at Dubai International Airport at 9:35 PM on Wednesday, March 4.
-    //  Total duration 7 hr 45 min. Layover (1 of 1) is a 2 hr 50 min layover at
-    //  Muscat International Airport in Muscat. Select flight"
+/**
+ * Parse flight cards from cleaned text.
+ * Returns up to 8 flights sorted by price.
+ */
+function parseSerpFlightCards(html: string): SerpFlightCard[] {
+  // Strip all HTML tags and normalize whitespace
+  const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
 
-    // Price
-    const priceMatch = label.match(/From (\d[\d,]*)\s+(.+?)\s+(round trip|one way)/i);
-    if (!priceMatch) return null;
-    const price = parseInt(priceMatch[1].replace(/,/g, ""), 10);
-    const currencyLabel = priceMatch[2]; // "US dollars" or "Indian rupees"
-    const tripType = priceMatch[3];
+  // Match: AirlineName Duration Connecting|Nonstop from $Price
+  // Duration formats: "2h 15m", "22h 55m+", "1d 11h+", "4h 0m+"
+  // Airline names can be 1-4 words like "Multiple airlines", "Air India Express", "IndiGo"
+  const pattern =
+    /(Multiple airlines|[A-Z][A-Za-z]+(?:\s+[A-Za-z]+){0,3})\s+(\d+[dh]\s*\d*[hm]?\+?)\s+(Connecting|Nonstop)\s+from\s+\$([\d,]+)/g;
 
-    // Determine currency code
-    let currency = "USD";
-    if (/indian rupee/i.test(currencyLabel)) currency = "INR";
-    else if (/euro/i.test(currencyLabel)) currency = "EUR";
-    else if (/british pound|pound sterling/i.test(currencyLabel)) currency = "GBP";
-    else if (/canadian dollar/i.test(currencyLabel)) currency = "CAD";
-    else if (/australian dollar/i.test(currencyLabel)) currency = "AUD";
+  // Known non-airline prefixes that may get captured
+  const stripPrefixes = [
+    "Round trip ",
+    "One way ",
+    "Nonstop ",
+    "Economy ",
+    "Business ",
+    "First class ",
+  ];
 
-    // Stops
-    let stops = 0;
-    const stopsMatch = label.match(/(\d+)\s+stop\s+flight/i);
-    const nonstopMatch = label.match(/Nonstop flight/i);
-    if (stopsMatch) stops = parseInt(stopsMatch[1], 10);
-    else if (nonstopMatch) stops = 0;
+  const cards: SerpFlightCard[] = [];
+  const seen = new Set<string>(); // deduplicate
+  let m: RegExpExecArray | null;
 
-    // Airlines — "with IndiGo" or "with Air India and Air India Express"
-    const airlineMatch = label.match(/flight with (.+?)\.\s/i);
-    let airlines: string[] = [];
-    if (airlineMatch) {
-      airlines = airlineMatch[1].split(/\s+and\s+/i).map((a) => a.trim());
+  while ((m = pattern.exec(text)) !== null) {
+    let airline = m[1].trim();
+    const duration = m[2].trim();
+    const stopsType = m[3];
+    const price = parseInt(m[4].replace(/,/g, ""), 10);
+
+    // Strip known non-airline prefixes
+    for (const prefix of stripPrefixes) {
+      if (airline.startsWith(prefix)) {
+        airline = airline.slice(prefix.length).trim();
+      }
     }
 
-    // Departure: "Leaves {airport} at {time} on {day}, {date}"
-    const departMatch = label.match(
-      /Leaves (.+?) at (\d{1,2}:\d{2}\s*[AP]M) on (\w+day), (.+?) and arrives/i
-    );
-    let departTime = "";
-    let departDate = "";
-    let departAirport = "";
-    if (departMatch) {
-      departAirport = departMatch[1];
-      departTime = departMatch[2];
-      departDate = `${departMatch[3]}, ${departMatch[4]}`;
+    const key = `${airline}|${duration}|${price}`;
+
+    // Skip obvious false positives
+    if (
+      airline.length < 2 ||
+      airline.length > 40 ||
+      isNaN(price) ||
+      price <= 0 ||
+      seen.has(key)
+    ) {
+      continue;
     }
+    seen.add(key);
 
-    // Arrival: "arrives at {airport} at {time} on {day}, {date}"
-    const arriveMatch = label.match(
-      /arrives at (.+?) at (\d{1,2}:\d{2}\s*[AP]M) on (\w+day), (.+?)\./i
-    );
-    let arriveTime = "";
-    let arriveDate = "";
-    let arriveAirport = "";
-    if (arriveMatch) {
-      arriveAirport = arriveMatch[1];
-      arriveTime = arriveMatch[2];
-      arriveDate = `${arriveMatch[3]}, ${arriveMatch[4]}`;
-    }
-
-    // Duration: "Total duration 7 hr 45 min" or "Total duration 4 hr 5 min"
-    const durationMatch = label.match(/Total duration (\d+\s*hr(?:\s+\d+\s*min)?)/i);
-    const duration = durationMatch
-      ? durationMatch[1].replace(/\s+/g, " ").replace(/hr/, "h").replace(/min/, "m")
-      : "";
-
-    // Layovers: "Layover (1 of 1) is a 2 hr 50 min layover at {airport} in {city}"
-    const layovers: { duration: string; airport: string; city: string }[] = [];
-    const layoverRegex =
-      /Layover \(\d+ of \d+\) is a (.+?) (?:overnight )?layover at (.+?) in (.+?)(?:\.|$)/gi;
-    let lm;
-    while ((lm = layoverRegex.exec(label)) !== null) {
-      layovers.push({
-        duration: lm[1].replace(/\s+/g, " ").replace(/hr/, "h").replace(/min/, "m"),
-        airport: lm[2],
-        city: lm[3].replace(/\.\s*Select flight.*$/, ""),
-      });
-    }
-
-    // Stop description
-    let stopDescription = stops === 0 ? "Direct" : `${stops} stop${stops > 1 ? "s" : ""}`;
-    if (layovers.length > 0) {
-      stopDescription += ` via ${layovers.map((l) => l.city).join(", ")}`;
-    }
-
-    return {
-      price,
-      currency,
-      currencyLabel,
-      airlines,
-      departTime,
-      arriveTime,
-      departDate,
-      arriveDate,
-      duration,
-      stops,
-      stopDescription,
-      layovers,
-      departAirport,
-      arriveAirport,
-      tripType,
-    };
-  } catch (err) {
-    console.error("Failed to parse flight label:", err);
-    return null;
+    cards.push({ airline, duration, stopsType, price, currency: "USD" });
   }
+
+  // Sort by price ascending
+  cards.sort((a, b) => a.price - b.price);
+  return cards.slice(0, 8);
 }
 
-// ─── Convert parsed flight to FlightResult ──────────────────────────
+// ─── Convert parsed card to FlightResult ────────────────────────────
 
-function toFlightResult(
-  parsed: ParsedFlight,
+function cardToFlightResult(
+  card: SerpFlightCard,
   index: number,
-  params: FlightSearchParams
+  params: FlightSearchParams,
+  deepLink?: string
 ): FlightResult {
-  const airlineCodes = parsed.airlines.map((name) => {
-    const key = name.toLowerCase();
-    return AIRLINE_TO_CODE[key] || name.substring(0, 2).toUpperCase();
-  });
+  const airlineLower = card.airline.toLowerCase();
+  const airlineCode =
+    AIRLINE_TO_CODE[airlineLower] ||
+    (card.airline === "Multiple airlines"
+      ? "MIX"
+      : card.airline.substring(0, 2).toUpperCase());
 
-  // Extract IATA codes from airport names if possible
   const depIata = params.origin.toUpperCase();
   const arrIata = params.destination.toUpperCase();
-
-  const stopCities = parsed.layovers.map((l) => l.city);
+  const stops = card.stopsType === "Nonstop" ? 0 : 1;
 
   return {
-    id: `gf-${index}-${depIata}-${arrIata}-${parsed.price}`,
-    price: String(parsed.price),
-    currency: parsed.currency,
-    airlines: parsed.airlines,
-    airlineCodes,
+    id: `gf-${index}-${depIata}-${arrIata}-${card.price}`,
+    price: String(card.price),
+    currency: card.currency,
+    airlines: [card.airline],
+    airlineCodes: [airlineCode],
     outbound: {
       departure: depIata,
       arrival: arrIata,
-      departTime: parsed.departTime || "—",
-      arriveTime: parsed.arriveTime || "—",
-      departDate: parsed.departDate || "",
-      duration: parsed.duration || "—",
-      stops: parsed.stops,
-      stopCities,
-      segments: parsed.airlines.map((airline, i) => ({
-        from: i === 0 ? depIata : stopCities[i - 1] || depIata,
-        to: i === parsed.airlines.length - 1 ? arrIata : stopCities[i] || arrIata,
-        airline,
-        flightNo: airlineCodes[i] || "",
-        departTime: i === 0 ? parsed.departTime : "—",
-        arriveTime: i === parsed.airlines.length - 1 ? parsed.arriveTime : "—",
-        duration: parsed.layovers[i]?.duration || "—",
-      })),
+      departTime: "—",
+      arriveTime: "—",
+      departDate: params.departDate,
+      duration: card.duration
+        .replace(/\s+/g, " ")
+        .replace(/\+$/, "")
+        .replace(/d/, "d ")
+        .replace(/h/, "h ")
+        .replace(/m/, "m")
+        .trim(),
+      stops,
+      stopCities: [],
+      segments: [
+        {
+          from: depIata,
+          to: arrIata,
+          airline: card.airline,
+          flightNo: airlineCode,
+          departTime: "—",
+          arriveTime: "—",
+          duration: card.duration,
+        },
+      ],
     },
     cabin: params.cabinClass
-      ? params.cabinClass.charAt(0).toUpperCase() + params.cabinClass.slice(1).toLowerCase()
+      ? params.cabinClass.charAt(0).toUpperCase() +
+        params.cabinClass.slice(1).toLowerCase()
       : "Economy",
-    deepLink: buildSkyscannerLink(params),
+    deepLink: deepLink || buildSkyscannerLink(params),
   };
 }
 
-// ─── Fetch HTML via Bright Data SERP API ────────────────────────────
+// ─── Fetch via Bright Data SERP API ─────────────────────────────────
+// Uses Google Search (not Google Flights) since SERP zone natively
+// parses search results without JS rendering.
 
-async function fetchViaBrightData(googleUrl: string): Promise<string> {
+async function fetchViaBrightData(searchUrl: string): Promise<string> {
   const apiKey = process.env.BRIGHTDATA_API_KEY;
   if (!apiKey) {
     throw new Error("BRIGHTDATA_API_KEY not set");
@@ -432,7 +362,7 @@ async function fetchViaBrightData(googleUrl: string): Promise<string> {
     },
     body: JSON.stringify({
       zone: "serp",
-      url: googleUrl,
+      url: searchUrl,
       format: "raw",
     }),
   });
@@ -471,19 +401,26 @@ export async function searchFlights(
   console.log("[flight-scraper] Cache MISS for", cacheKey);
 
   const useBrightData = !!process.env.BRIGHTDATA_API_KEY;
+  const googleFlightsUrl = buildGoogleFlightsUrl(params);
 
   try {
-    const url = buildGoogleFlightsUrl(params);
-    console.log("[flight-scraper] Fetching via", useBrightData ? "Bright Data" : "direct", ":", url);
+    const searchUrl = buildGoogleSearchUrl(params);
+    console.log(
+      "[flight-scraper] Fetching via",
+      useBrightData ? "Bright Data SERP" : "direct",
+      ":",
+      searchUrl
+    );
 
     let html: string;
     if (useBrightData) {
-      html = await fetchViaBrightData(url);
+      html = await fetchViaBrightData(searchUrl);
     } else {
-      // Direct fetch fallback (works in dev, blocked in production)
-      const res = await fetch(url, {
+      // Direct fetch fallback (works in dev, may be blocked in production)
+      const res = await fetch(searchUrl, {
         headers: {
-          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+          "User-Agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
           "Accept-Language": "en-US,en;q=0.9",
         },
         redirect: "follow",
@@ -494,7 +431,7 @@ export async function searchFlights(
           count: 0,
           searchedAt: new Date().toISOString(),
           source: "error",
-          error: `Google Flights returned HTTP ${res.status}`,
+          error: `Google returned HTTP ${res.status}`,
         };
       }
       html = await res.text();
@@ -502,17 +439,12 @@ export async function searchFlights(
 
     console.log("[flight-scraper] Received HTML:", html.length, "bytes");
 
-    // Extract all flight aria-labels
-    const flightLabelRegex = /aria-label="(From \d[\d,]*\s+.+?Select flight)"/g;
-    const labels: string[] = [];
-    let match;
-    while ((match = flightLabelRegex.exec(html)) !== null) {
-      labels.push(match[1]);
-    }
+    // ─── Parse flight cards from SERP HTML ────────────────────────
+    const cards = parseSerpFlightCards(html);
+    console.log("[flight-scraper] Parsed", cards.length, "flight cards");
 
-    console.log("[flight-scraper] Found", labels.length, "flight labels");
-
-    if (labels.length === 0) {
+    if (cards.length === 0) {
+      // Check for blocking signals
       const htmlLower = html.toLowerCase();
       const isCaptcha =
         htmlLower.includes("recaptcha") ||
@@ -522,17 +454,16 @@ export async function searchFlights(
         htmlLower.includes("unusual traffic") ||
         htmlLower.includes("automated queries") ||
         htmlLower.includes("systems have detected");
-      const isConsent = htmlLower.includes("consent.google");
 
       console.warn(
         "[flight-scraper] No flights found.",
         isCaptcha ? "CAPTCHA." : "",
         isBlocked ? "Blocked." : "",
-        isConsent ? "Consent redirect." : "",
-        "HTML length:", html.length
+        "HTML length:",
+        html.length
       );
 
-      if (isCaptcha || isBlocked || isConsent) {
+      if (isCaptcha || isBlocked) {
         return {
           flights: [],
           count: 0,
@@ -540,7 +471,7 @@ export async function searchFlights(
           source: "error",
           error: "Search temporarily limited. Please try again in a moment.",
           suggestedLinks: {
-            googleFlights: url,
+            googleFlights: googleFlightsUrl,
             skyscanner: buildSkyscannerLink(params),
           },
         };
@@ -551,25 +482,19 @@ export async function searchFlights(
         count: 0,
         searchedAt: new Date().toISOString(),
         source: "no-results",
-        error: "No flights found for this route. Try different dates or nearby airports.",
+        error:
+          "No flights found for this route. Try different dates or nearby airports.",
         suggestedLinks: {
-          googleFlights: url,
+          googleFlights: googleFlightsUrl,
           skyscanner: buildSkyscannerLink(params),
         },
       };
     }
 
-    // Parse each label into a FlightResult
-    const flights: FlightResult[] = [];
-    for (let i = 0; i < labels.length && flights.length < 10; i++) {
-      const parsed = parseFlightLabel(labels[i]);
-      if (parsed) {
-        flights.push(toFlightResult(parsed, i, params));
-      }
-    }
-
-    // Sort by price
-    flights.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+    // ─── Convert cards to FlightResult array ──────────────────────
+    const flights: FlightResult[] = cards.map((card, i) =>
+      cardToFlightResult(card, i, params, googleFlightsUrl)
+    );
 
     const result: FlightSearchResult = {
       flights: flights.slice(0, 8),
@@ -581,7 +506,12 @@ export async function searchFlights(
     // ─── Store in cache ───────────────────────────────────────────
     if (result.count > 0) {
       setCache(cacheKey, result);
-      console.log("[flight-scraper] Cached", result.count, "flights for", cacheKey);
+      console.log(
+        "[flight-scraper] Cached",
+        result.count,
+        "flights for",
+        cacheKey
+      );
     }
 
     return result;
@@ -594,7 +524,7 @@ export async function searchFlights(
       source: "error",
       error: "Flight search failed. Please try again.",
       suggestedLinks: {
-        googleFlights: buildGoogleFlightsUrl(params),
+        googleFlights: googleFlightsUrl,
         skyscanner: buildSkyscannerLink(params),
       },
     };

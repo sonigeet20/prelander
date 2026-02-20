@@ -7,7 +7,8 @@ import { searchFlights } from "@/lib/flight-scraper";
  * POST /api/flights/search
  * Body: { origin, destination, departDate, returnDate?, adults, cabinClass }
  *
- * Uses Bright Data residential proxies to fetch Google Flights data.
+ * Uses Bright Data SERP API to fetch Google Search flight cards.
+ * No JS rendering needed — flight data is in the server-rendered SERP HTML.
  * Results cached for 2 hours to minimize API usage.
  */
 
