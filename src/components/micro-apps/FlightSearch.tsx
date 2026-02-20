@@ -164,7 +164,11 @@ export function FlightSearch({
 
       const data = await res.json();
       setDataSource(data.source || "");
-      if (data.error && (!data.flights || data.flights.length === 0)) {
+      if (data.source === "no-results") {
+        // Route genuinely has no flights — show helpful redirect
+        setFlights([]);
+        setError("No flights found for this route. Try different dates, nearby airports, or check Skyscanner for alternatives.");
+      } else if (data.error && (!data.flights || data.flights.length === 0)) {
         setError(data.error);
       } else if (data.source === "deeplink-only" || data.count === 0) {
         // Scraping didn't return live prices — show redirect CTA

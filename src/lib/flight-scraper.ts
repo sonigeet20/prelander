@@ -404,115 +404,163 @@ export async function searchFlights(
   }
   console.log("[flight-scraper] Cache MISS for", cacheKey);
 
-  const headers: Record<string, string> = {
-    "User-Agent": randomUA(),
-    Accept:
-      "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Cache-Control": "no-cache",
-    Connection: "keep-alive",
-    "Upgrade-Insecure-Requests": "1",
-    "Sec-Fetch-Dest": "document",
-    "Sec-Fetch-Mode": "navigate",
-    "Sec-Fetch-Site": "none",
-    "Sec-Fetch-User": "?1",
-  };
+  const MAX_RETRIES = 2;
 
-  // Forward client IP if available
-  if (params.clientIp) {
-    headers["X-Forwarded-For"] = params.clientIp;
-  }
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    const headers: Record<string, string> = {
+      "User-Agent": randomUA(),
+      Accept:
+        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+      "Accept-Language": "en-US,en;q=0.9",
+      "Accept-Encoding": "gzip, deflate, br",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+      "Upgrade-Insecure-Requests": "1",
+      "Sec-Fetch-Dest": "document",
+      "Sec-Fetch-Mode": "navigate",
+      "Sec-Fetch-Site": "none",
+      "Sec-Fetch-User": "?1",
+    };
 
-  try {
-    const url = buildGoogleFlightsUrl(params);
-    console.log("[flight-scraper] Fetching:", url);
-
-    const res = await fetch(url, { headers, redirect: "follow" });
-
-    if (!res.ok) {
-      console.error("[flight-scraper] Google Flights returned", res.status);
-      return {
-        flights: [],
-        count: 0,
-        searchedAt: new Date().toISOString(),
-        source: "error",
-        error: `Google Flights returned HTTP ${res.status}`,
-      };
+    // Forward client IP if available
+    if (params.clientIp) {
+      headers["X-Forwarded-For"] = params.clientIp;
     }
 
-    const html = await res.text();
-    console.log("[flight-scraper] Received HTML:", html.length, "bytes");
+    try {
+      const url = buildGoogleFlightsUrl(params);
+      console.log(`[flight-scraper] Attempt ${attempt}/${MAX_RETRIES} — Fetching:`, url);
 
-    // Extract all flight aria-labels
-    // Pattern: aria-label="From {price} {currency} {trip_type} total. ..."
-    const flightLabelRegex =
-      /aria-label="(From \d[\d,]*\s+.+?Select flight)"/g;
-    const labels: string[] = [];
-    let match;
-    while ((match = flightLabelRegex.exec(html)) !== null) {
-      labels.push(match[1]);
-    }
+      const res = await fetch(url, { headers, redirect: "follow" });
 
-    console.log("[flight-scraper] Found", labels.length, "flight labels");
-
-    if (labels.length === 0) {
-      // Check if we got a CAPTCHA or consent page
-      const isCaptcha = html.includes("captcha") || html.includes("consent");
-      const isBlocked = html.includes("unusual traffic") || html.includes("automated");
-      console.warn(
-        "[flight-scraper] No flights found.",
-        isCaptcha ? "CAPTCHA detected." : "",
-        isBlocked ? "Blocked." : ""
-      );
-
-      return {
-        flights: [],
-        count: 0,
-        searchedAt: new Date().toISOString(),
-        source: "error",
-        error: isCaptcha || isBlocked
-          ? "Search temporarily limited. Please try again in a moment."
-          : "No flights found for this route. Try different dates or airports.",
-      };
-    }
-
-    // Parse each label into a FlightResult
-    const flights: FlightResult[] = [];
-    for (let i = 0; i < labels.length && flights.length < 10; i++) {
-      const parsed = parseFlightLabel(labels[i]);
-      if (parsed) {
-        flights.push(toFlightResult(parsed, i, params));
+      if (!res.ok) {
+        console.error("[flight-scraper] Google Flights returned", res.status);
+        if (attempt < MAX_RETRIES) {
+          await new Promise((r) => setTimeout(r, 1000 + Math.random() * 1000));
+          continue;
+        }
+        return {
+          flights: [],
+          count: 0,
+          searchedAt: new Date().toISOString(),
+          source: "error",
+          error: `Google Flights returned HTTP ${res.status}`,
+        };
       }
+
+      const html = await res.text();
+      console.log("[flight-scraper] Received HTML:", html.length, "bytes");
+
+      // Extract all flight aria-labels
+      // Pattern: aria-label="From {price} {currency} {trip_type} total. ..."
+      const flightLabelRegex =
+        /aria-label="(From \d[\d,]*\s+.+?Select flight)"/g;
+      const labels: string[] = [];
+      let match;
+      while ((match = flightLabelRegex.exec(html)) !== null) {
+        labels.push(match[1]);
+      }
+
+      console.log("[flight-scraper] Found", labels.length, "flight labels");
+
+      if (labels.length === 0) {
+        // Detect actual CAPTCHA / blocking (not cookie consent banners)
+        const htmlLower = html.toLowerCase();
+        const isCaptcha =
+          htmlLower.includes("recaptcha") ||
+          htmlLower.includes("id=\"captcha\"") ||
+          htmlLower.includes("class=\"captcha\"") ||
+          htmlLower.includes("solve this captcha");
+        const isBlocked =
+          htmlLower.includes("unusual traffic") ||
+          htmlLower.includes("automated queries") ||
+          htmlLower.includes("systems have detected");
+
+        console.warn(
+          `[flight-scraper] Attempt ${attempt}: No flights found.`,
+          isCaptcha ? "CAPTCHA detected." : "",
+          isBlocked ? "Blocked." : "",
+          "HTML length:", html.length,
+          "Sample:", html.substring(0, 500).replace(/\n/g, " ").substring(0, 200)
+        );
+
+        if ((isCaptcha || isBlocked) && attempt < MAX_RETRIES) {
+          // Retry with different UA after a delay
+          console.log("[flight-scraper] Retrying with different User-Agent...");
+          await new Promise((r) => setTimeout(r, 1500 + Math.random() * 1500));
+          continue;
+        }
+
+        if (isCaptcha || isBlocked) {
+          return {
+            flights: [],
+            count: 0,
+            searchedAt: new Date().toISOString(),
+            source: "error",
+            error: "Search temporarily limited. Please try again in a moment.",
+          };
+        }
+
+        // No blocking — route genuinely has no flights
+        return {
+          flights: [],
+          count: 0,
+          searchedAt: new Date().toISOString(),
+          source: "no-results",
+          error: "No flights found for this route. Try different dates or nearby airports.",
+        };
+      }
+
+      // Parse each label into a FlightResult
+      const flights: FlightResult[] = [];
+      for (let i = 0; i < labels.length && flights.length < 10; i++) {
+        const parsed = parseFlightLabel(labels[i]);
+        if (parsed) {
+          flights.push(toFlightResult(parsed, i, params));
+        }
+      }
+
+      // Sort by price
+      flights.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+
+      const result: FlightSearchResult = {
+        flights: flights.slice(0, 8),
+        count: Math.min(flights.length, 8),
+        searchedAt: new Date().toISOString(),
+        source: "google-flights",
+      };
+
+      // ─── Store in cache ───────────────────────────────────────────
+      if (result.count > 0) {
+        setCache(cacheKey, result);
+        console.log("[flight-scraper] Cached", result.count, "flights for", cacheKey);
+      }
+
+      return result;
+    } catch (err) {
+      console.error(`[flight-scraper] Attempt ${attempt} error:`, err);
+      if (attempt < MAX_RETRIES) {
+        await new Promise((r) => setTimeout(r, 1000 + Math.random() * 1000));
+        continue;
+      }
+      return {
+        flights: [],
+        count: 0,
+        searchedAt: new Date().toISOString(),
+        source: "error",
+        error: "Flight search failed. Please try again.",
+      };
     }
-
-    // Sort by price
-    flights.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
-
-    const result: FlightSearchResult = {
-      flights: flights.slice(0, 8),
-      count: Math.min(flights.length, 8),
-      searchedAt: new Date().toISOString(),
-      source: "google-flights",
-    };
-
-    // ─── Store in cache ───────────────────────────────────────────
-    if (result.count > 0) {
-      setCache(cacheKey, result);
-      console.log("[flight-scraper] Cached", result.count, "flights for", cacheKey);
-    }
-
-    return result;
-  } catch (err) {
-    console.error("[flight-scraper] Error:", err);
-    return {
-      flights: [],
-      count: 0,
-      searchedAt: new Date().toISOString(),
-      source: "error",
-      error: "Flight search failed. Please try again.",
-    };
   }
+
+  // Should not reach here, but safety fallback
+  return {
+    flights: [],
+    count: 0,
+    searchedAt: new Date().toISOString(),
+    source: "error",
+    error: "Flight search failed after retries.",
+  };
 }
 
 // ─── Simplified output for AI assistant ─────────────────────────────
