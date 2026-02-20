@@ -71,11 +71,22 @@ export async function POST(req: NextRequest) {
     const userAgent = req.headers.get("user-agent") || "";
     const referer = req.headers.get("referer") || "";
 
-    // Extract Google Ads click IDs from URL params
-    const url = new URL(req.url);
-    const gclid = url.searchParams.get("gclid");
-    const gbraid = url.searchParams.get("gbraid");
-    const wbraid = url.searchParams.get("wbraid");
+    // Read Google Ads click IDs from the JSON body (sent by TrackingPixels)
+    let gclid = body.gclid || null;
+    let gbraid = body.gbraid || null;
+    let wbraid = body.wbraid || null;
+
+    // Fallback: try to extract from the referer URL if not in body
+    if (!gclid && !gbraid && !wbraid && referer) {
+      try {
+        const refUrl = new URL(referer);
+        gclid = refUrl.searchParams.get("gclid") || null;
+        gbraid = refUrl.searchParams.get("gbraid") || null;
+        wbraid = refUrl.searchParams.get("wbraid") || null;
+      } catch {
+        // Ignore invalid referer URLs
+      }
+    }
 
     if (type === "impression" && pageUrl) {
       // Log page view
